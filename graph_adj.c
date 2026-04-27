@@ -75,10 +75,10 @@ void add_property_to_edge(Edge* edge, const char* key, DataType type, void* valu
     new_prop->type = type;
 
     switch (type) {
-        case INTEGER: new_prop->value.i_val = *(int*)value; break;
-        case FLOAT:   new_prop->value.f_val = *(float*)value; break;
-        case BOOLEAN: new_prop->value.b_val = *(int*)value; break;
-        case STRING:
+        case TYPE_INTEGER: new_prop->value.i_val = *(int*)value; break;
+        case TYPE_FLOAT:   new_prop->value.f_val = *(float*)value; break;
+        case TYPE_BOOLEAN: new_prop->value.b_val = *(int*)value; break;
+        case TYPE_STRING:
             #ifdef _MSC_VER
                 new_prop->value.s_val = _strdup((char*)value);
             #else
@@ -101,7 +101,7 @@ void free_graph(Graph* graph) {
             // Kenar içindeki dinamik özellikleri temizle
             for(int j=0; j < temp->edge.property_count; j++) {
                 free(temp->edge.properties[j].name);
-                if(temp->edge.properties[j].type == STRING) free(temp->edge.properties[j].value.s_val);
+                if(temp->edge.properties[j].type == TYPE_STRING) free(temp->edge.properties[j].value.s_val);
             }
             free(temp->edge.properties);
             free(temp);
