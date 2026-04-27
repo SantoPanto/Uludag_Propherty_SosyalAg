@@ -1,6 +1,5 @@
-#ifndef GRAPH_MODELS_H_INCLUDED
-#define GRAPH_MODELS_H_INCLUDED
-
+#ifndef GRAPH_MODELS_H
+#define GRAPH_MODELS_H
 
 // --- ADIM 1: Sabitler ve Tip Tanımlamaları ---
 typedef enum {
@@ -10,10 +9,10 @@ typedef enum {
 } NodeType;
 
 typedef enum {
-    INTEGER,
-    FLOAT,
-    STRING,
-    BOOLEAN
+    TYPE_INTEGER,
+    TYPE_FLOAT,
+    TYPE_STRING,
+    TYPE_BOOLEAN
 } DataType;
 
 // --- ADIM 2: Esnek Özellik (Property) Mimarisi ---
@@ -67,6 +66,4 @@ Node* create_node(int id, NodeType type);
 void add_property_to_node(Node* node, const char* key, DataType type, void* value);
 void free_node(Node* node);
 
-
-
-#endif // GRAPH_MODELS_H_INCLUDED
+#endif // GRAPH_MODELS_H
