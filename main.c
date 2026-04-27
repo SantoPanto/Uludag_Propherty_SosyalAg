@@ -23,7 +23,7 @@ int main() {
     char* date = "2026-04-27";
     // Not: add_edge doğrudan Edge dönmediği için head üzerinden erişiyoruz
     if(net->adjLists[0] != NULL) {
-        add_property_to_edge(&(net->adjLists[0]->edge), "LikeDate", STRING, date);
+        add_property_to_edge(&(net->adjLists[0]->edge), "LikeDate", TYPE_STRING, date);
     }
 
     printf("Dugumler ve Kenarlar basariyla baglandi!\n");
