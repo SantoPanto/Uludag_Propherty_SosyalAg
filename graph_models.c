@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "graph_models.h"
+#include "graph_models.h" // Kendi başlık dosyamızı dahil ediyoruz
 
 // --- 1. Düğüm Oluşturma (Constructor) ---
 // Yeni bir düğüm için bellekte (heap) yer açar ve başlangıç değerlerini atar[cite: 60].
@@ -49,16 +49,16 @@ void add_property_to_node(Node* node, const char* key, DataType type, void* valu
 
     // 4. void* tipindeki genel pointer'ı, gelen veri tipine göre çevirip Union'a ata
     switch (type) {
-        case INTEGER:
+        case TYPE_INTEGER:
             new_prop->value.i_val = *(int*)value;
             break;
-        case FLOAT:
+        case TYPE_FLOAT:
             new_prop->value.f_val = *(float*)value;
             break;
-        case BOOLEAN:
+        case TYPE_BOOLEAN:
             new_prop->value.b_val = *(int*)value;
             break;
-        case STRING:
+        case TYPE_STRING:
             // Eğer veri metin ise, değerin (value) de bir kopyasını almalıyız
             #ifdef _MSC_VER
                 new_prop->value.s_val = _strdup((char*)value);
@@ -82,7 +82,7 @@ void free_node(Node* node) {
         free(node->properties[i].name); // Özellik adını (key) sil
 
         // Eğer özellik bir metin (STRING) ise, strdup ile kopyalanan s_val'i de sil
-        if (node->properties[i].type == STRING) {
+        if (node->properties[i].type == TYPE_STRING) {
             free(node->properties[i].value.s_val);
         }
     }
