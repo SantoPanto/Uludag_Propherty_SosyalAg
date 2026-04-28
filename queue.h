@@ -1,19 +1,19 @@
 #ifndef QUEUE_H_INCLUDED
 #define QUEUE_H_INCLUDED
 
-#include "graph_models.h" // 1. kişinin Node yapısını kullanmak için
+#include "graph_models.h" // 1. kiÃ¾inin Node yapÃ½sÃ½nÃ½ kullanmak iÃ§in
 #include <stdbool.h>
 
-// Kuyruk elemanı: Graf düğümünün adresini ve bir sonraki kuyruk elemanını tutar
+// Kuyruk elemanÃ½: Graf dÃ¼Ã°Ã¼mÃ¼nÃ¼n adresini ve bir sonraki kuyruk elemanÃ½nÃ½ tutar
 typedef struct QueueNode {
     Node* data;
     struct QueueNode* next;
 } QueueNode;
 
-// Ana Kuyruk Yapısı
+// Ana Kuyruk YapÃ½sÃ½
 typedef struct {
-    QueueNode* front; // Kuyruktan çıkış ucu
-    QueueNode* rear;  // Kuyruğa giriş ucu
+    QueueNode* front; // Kuyruktan Ã§Ã½kÃ½Ã¾ ucu
+    QueueNode* rear;  // KuyruÃ°a giriÃ¾ ucu
 } Queue;
 
 // Kuyruk Fonksiyon Prototipleri
