@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "kuyruk.h"
 
-// Kuyruğu başlatır
+// KuyruÃ°u baÃ¾latÃ½r
 Queue* create_queue() {
     Queue* q = (Queue*)malloc(sizeof(Queue));
     if (!q) return NULL;
@@ -10,12 +10,12 @@ Queue* create_queue() {
     return q;
 }
 
-// Kuyruğun boş olup olmadığını kontrol eder
+// KuyruÃ°un boÃ¾ olup olmadÃ½Ã°Ã½nÃ½ kontrol eder
 bool is_empty(Queue* q) {
     return (q->front == NULL);
 }
 
-// Kuyruğa eleman ekler (Sona ekleme - FIFO)
+// KuyruÃ°a eleman ekler (Sona ekleme - FIFO)
 void enqueue(Queue* q, Node* node) {
     QueueNode* temp = (QueueNode*)malloc(sizeof(QueueNode));
     if (!temp) {
@@ -34,7 +34,7 @@ void enqueue(Queue* q, Node* node) {
     q->rear = temp;
 }
 
-// Kuyruktan eleman çıkarır (Baştan çıkarma - FIFO)
+// Kuyruktan eleman Ã§Ã½karÃ½r (BaÃ¾tan Ã§Ã½karma - FIFO)
 Node* dequeue(Queue* q) {
     if (is_empty(q)) return NULL;
 
@@ -47,11 +47,11 @@ Node* dequeue(Queue* q) {
         q->rear = NULL;
     }
 
-    free(temp); // Sadece kuyruk kapsülünü sil, asıl Node grafın içinde güvende
+    free(temp); // Sadece kuyruk kapsÃ¼lÃ¼nÃ¼ sil, asÃ½l Node grafÃ½n iÃ§inde gÃ¼vende
     return node_data;
 }
 
-// Kuyruğu tamamen temizler
+// KuyruÃ°u tamamen temizler
 void free_queue(Queue* q) {
     while (!is_empty(q)) {
         dequeue(q);
