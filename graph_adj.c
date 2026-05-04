@@ -3,7 +3,7 @@
 #include <string.h>
 #include "graph_adj.h"
 
-// Graf iskeletini oluşturur
+//Graf oluşturma fonksiyonu
 Graph* create_graph(int capacity) {
     Graph* graph = (Graph*)malloc(sizeof(Graph));
     if (!graph) return NULL;
