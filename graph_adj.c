@@ -7,10 +7,13 @@
 Graph* create_graph(int capacity) {
     Graph* graph = (Graph*)malloc(sizeof(Graph));
     if (!graph) return NULL;
+
     graph->node_count = 0;
     graph->capacity = capacity;
+
     graph->nodes = (Node**)malloc(capacity * sizeof(Node*));
     graph->adjLists = (AdjListNode**)malloc(capacity * sizeof(AdjListNode*));
+
     for (int i = 0; i < capacity; i++) {
         graph->adjLists[i] = NULL;
     }
@@ -22,8 +25,6 @@ void add_node_to_graph(Graph* graph, Node* node) {
     if (graph->node_count < graph->capacity) {
         graph->nodes[graph->node_count] = node;
         graph->node_count++;
-    } else {
-        fprintf(stderr, "Uyari: Graf kapasitesi dolu, yeni dugum eklenemedi!\n");
     }
 }
 
@@ -40,13 +41,17 @@ void add_edge(Graph* graph, int src_id, int dest_id, EdgeType type, bool is_dire
     int src_idx = find_node_index(graph, src_id);
     if (src_idx == -1) return;
 
-    // Yeni bir bağlı liste düğümü oluştur
+    // Yeni bir bağlı liste düğümü oluştur (malloc)
     AdjListNode* newNode = (AdjListNode*)malloc(sizeof(AdjListNode));
 
-    // 1. KİŞİNİN MİMARİSİ KULLANILIYOR: create_edge çağrıldı!
-    newNode->edge = create_edge(src_id, dest_id, type);
-    
-    // BAĞLI LİSTE MANTIĞI: Yeni elemanı listenin başına ekle
+    // Kenar verilerini arkadaşının struct yapısına göre doldur
+    newNode->edge.source_id = src_id;
+    newNode->edge.target_id = dest_id;
+    newNode->edge.type = type;
+    newNode->edge.properties = NULL;
+    newNode->edge.property_count = 0;
+
+    // BAĞLI LİSTE MANTIRI: Yeni elemanı listenin başına ekle (Pointer manipülasyonu)
     newNode->next = graph->adjLists[src_idx];
     graph->adjLists[src_idx] = newNode;
 
@@ -56,27 +61,54 @@ void add_edge(Graph* graph, int src_id, int dest_id, EdgeType type, bool is_dire
     }
 }
 
-// DİKKAT: add_property_to_edge fonksiyonu buradan silindi çünkü graph_models.c içinde zaten var!
+// Kenara dinamik özellik ekleme (Arkadaşının mantığıyla uyumlu)
+void add_property_to_edge(Edge* edge, const char* key, DataType type, void* value) {
+    edge->properties = (Property*)realloc(edge->properties, (edge->property_count + 1) * sizeof(Property));
+    Property* new_prop = &edge->properties[edge->property_count];
+
+    #ifdef _MSC_VER
+        new_prop->name = _strdup(key);
+    #else
+        new_prop->name = strdup(key);
+    #endif
+
+    new_prop->type = type;
+
+    switch (type) {
+        case TYPE_INTEGER: new_prop->value.i_val = *(int*)value; break;
+        case TYPE_FLOAT:   new_prop->value.f_val = *(float*)value; break;
+        case TYPE_BOOLEAN: new_prop->value.b_val = *(int*)value; break;
+        case TYPE_STRING:
+            #ifdef _MSC_VER
+                new_prop->value.s_val = _strdup((char*)value);
+            #else
+                new_prop->value.s_val = strdup((char*)value);
+            #endif
+            break;
+    }
+    edge->property_count++;
+}
 
 // Tüm grafı ve bağlı listeleri temizler (Bellek Yönetimi)
 void free_graph(Graph* graph) {
     if (!graph) return;
-    
     for (int i = 0; i < graph->node_count; i++) {
         AdjListNode* current = graph->adjLists[i];
         while (current != NULL) {
             AdjListNode* temp = current;
             current = current->next;
-            
-            // 1. KİŞİNİN MİMARİSİ KULLANILIYOR: free_edge çağrıldı!
-            free_edge(temp->edge); 
-            
-            free(temp); // Bağlı liste düğümünü sil
+
+            // Kenar içindeki dinamik özellikleri temizle
+            for(int j=0; j < temp->edge.property_count; j++) {
+                free(temp->edge.properties[j].name);
+                if(temp->edge.properties[j].type == TYPE_STRING) free(temp->edge.properties[j].value.s_val);
+            }
+            free(temp->edge.properties);
+            free(temp);
         }
-        // 1. kişinin free_node fonksiyonunu kullanarak asıl düğümü temizle
+        // 1. kişinin free_node fonksiyonunu kullanarak düğümü temizle
         free_node(graph->nodes[i]);
     }
-    
     free(graph->nodes);
     free(graph->adjLists);
     free(graph);

@@ -6,8 +6,8 @@
 
 // Komşuluk listesindeki her bir "bağ" elemanı (Linked List Node)
 typedef struct AdjListNode {
-    Edge* edge;                // DİKKAT: Pointer yapıldı!
-    struct AdjListNode* next;  
+    Edge edge;                 // Tanımlanan Edge verisi
+    struct AdjListNode* next;  // Bir sonraki kenara işaretçi
 } AdjListNode;
 
 // Ana Graf Yapısı
@@ -22,6 +22,7 @@ typedef struct {
 Graph* create_graph(int capacity);
 void add_node_to_graph(Graph* graph, Node* node);
 void add_edge(Graph* graph, int src_id, int dest_id, EdgeType type, bool is_directed);
+void add_property_to_edge(Edge* edge, const char* key, DataType type, void* value);
 void free_graph(Graph* graph);
 
 #endif // GRAPH_ADJ_H_INCLUDED
