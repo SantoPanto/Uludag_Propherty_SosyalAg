@@ -20,7 +20,7 @@ HashTable* create_hash_table(int size) {
 void insert_to_hash(HashTable* ht, Node* newNode) {
     if (ht == NULL || newNode == NULL) return;
 
-    // 1. Yeni eklenecek düğümün hangi indekse (zincire) gideceğini bul
+    // 1. Yeni eklenecek düğümün hangi indekse (zincire) gideceğini bul yenilikler eklendi
     int hashIndex = hash_function(newNode->id, ht->size);
 
     // --- EKLENEN MÜKERRER KAYIT KONTROLÜ ---
