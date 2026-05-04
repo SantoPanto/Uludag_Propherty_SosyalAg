@@ -2,9 +2,12 @@
 #define TRIE_H
 
 #include <stdbool.h>
+#include <ctype.h>        // YENİ EKLENDİ: tolower() fonksiyonu için gerekli
 #include "graph_models.h" // Graf düğümlerini (Node) Trie ile eşleştirmek için içeri aktarıyoruz
 
-// İngilizce alfabe ve temel ASCII karakterleri kapsamak için 128 boyutunda bir dizi kullanıyoruz
+// Standart ASCII karakterleri kapsamak için 128 boyutunda bir dizi kullanıyoruz.
+// DİKKAT: trie.c içinde diziye erişirken negatif sayılardan kaçınmak için 
+// mutlaka (unsigned char) casting işlemi yapılmalıdır!
 #define ALPHABET_SIZE 128
 
 /*
@@ -34,4 +37,4 @@ void insertToTrie(TrieNode* root, const char* word, Node* gNode);
 void autocomplete(TrieNode* root, const char* prefix);
 void freeTrie(TrieNode* root);
 
-#endif
+#endif // TRIE_H
