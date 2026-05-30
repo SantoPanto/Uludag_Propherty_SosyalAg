@@ -23,5 +23,6 @@ Graph* create_graph(int capacity);
 void add_node_to_graph(Graph* graph, Node* node);
 void add_edge(Graph* graph, int src_id, int dest_id, EdgeType type, bool is_directed);
 void free_graph(Graph* graph);
+int find_node_index(Graph* graph, int node_id);
 
 #endif // GRAPH_ADJ_H_INCLUDED

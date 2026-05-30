@@ -5,7 +5,7 @@ CFLAGS = -Wall -Wextra -g
 
 # --- Projedeki Tüm Kaynak Dosyalar ---
 # Ekibindeki herkesin yazdığı .c dosyaları burada listelenir
-SRCS = main.c graph_models.c graph_adj.c hash_table.c trie.c queue.c
+SRCS = main.c graph_models.c graph_adj.c hash_table.c trie.c queue.c algorithms.c
 
 # --- Çıktı (Çalıştırılabilir) Dosya Adı ---
 TARGET = program_adi
