@@ -48,7 +48,7 @@ typedef enum {
     ATTENDS     // Katılım ilişkisi (Örn: USER -> EVENT)
 } EdgeType;
 
-// --- Temel Kenar (Edge) Struct'ı ---
+//Temel Kenar (Edge) Struct'ı ---
 typedef struct {
     int source_id;          // Kaynak düğümün ID'si
     int target_id;          // Hedef düğümün ID'si
@@ -59,16 +59,11 @@ typedef struct {
     int property_count;     // Kenarda kaç özellik olduğunu tutar
 } Edge;
 
-// --- ADIM 5: Bellek Yönetimi Fonksiyon Prototipleri ---
 
-// Node (Düğüm) Fonksiyonları
+
+// Bellek Yönetimi Fonksiyon Prototipleri ---
 Node* create_node(int id, NodeType type);
 void add_property_to_node(Node* node, const char* key, DataType type, void* value);
 void free_node(Node* node);
-
-// Edge (Kenar) Fonksiyonları (YENİ EKLENEN KRİTİK GÜNCELLEME)
-Edge* create_edge(int source_id, int target_id, EdgeType type);
-void add_property_to_edge(Edge* edge, const char* key, DataType type, void* value);
-void free_edge(Edge* edge);
 
 #endif // GRAPH_MODELS_H
