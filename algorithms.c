@@ -163,3 +163,89 @@ void recommend_friends(Graph* graph, int target_user_id) {
     free(is_direct_friend);
     free(mutual_friend_scores);
 }
+
+// En Kısa Yolu Bulan ve Ekrana Çizen BFS Fonksiyonu
+void find_shortest_path(Graph* graph, int start_node_id, int target_node_id) {
+    int start_idx = find_node_index(graph, start_node_id);
+    int target_idx = find_node_index(graph, target_node_id);
+
+    if (start_idx == -1 || target_idx == -1) {
+        printf("Baslangic veya hedef dugum bulunamadi!\n");
+        return;
+    }
+
+    // Klasik ziyaret dizisi
+    bool* visited = (bool*)calloc(graph->capacity, sizeof(bool));
+    
+    // YENİ: Her dügümün "nereden gelindiğini" tutan ebeveyn dizisi
+    int* parent = (int*)malloc(graph->capacity * sizeof(int));
+    for (int i = 0; i < graph->capacity; i++) parent[i] = -1; // -1: Henüz bir rotası yok
+
+    Queue* q = create_queue();
+    visited[start_idx] = true;
+    enqueue(q, graph->nodes[start_idx]);
+
+    bool found = false;
+
+    // BFS Araması
+    while (!is_empty(q)) {
+        Node* current = dequeue(q);
+        int curr_idx = find_node_index(graph, current->id);
+
+        // Hedefe ulaştıysak tüm grafı taramaya gerek yok, çıkabiliriz.
+        if (curr_idx == target_idx) {
+            found = true;
+            break; 
+        }
+
+        AdjListNode* adj = graph->adjLists[curr_idx];
+        while (adj != NULL) {
+            int neighbor_idx = find_node_index(graph, adj->edge->target_id);
+
+            if (neighbor_idx != -1 && !visited[neighbor_idx]) {
+                visited[neighbor_idx] = true;
+                parent[neighbor_idx] = curr_idx; // Ekmek kırıntısını bırak (Yolu kaydet)
+                enqueue(q, graph->nodes[neighbor_idx]);
+            }
+            adj = adj->next;
+        }
+    }
+    
+    // Temizlik (Kuyrukta kalanlar olabilir)
+    free_queue(q);
+
+    printf("\n--- En Kisa Yol Raporu: [ID %d -> ID %d] ---\n", start_node_id, target_node_id);
+
+    if (found) {
+        // Yolu geriye doğru (Hedekten -> Başlangıca) takip et
+        int path[100]; // Geçici yol dizisi
+        int path_length = 0;
+        int curr = target_idx;
+
+        while (curr != -1) {
+            path[path_length++] = curr;
+            curr = parent[curr]; // Bir önceki adıma git
+        }
+
+        // Diziye sondan başa eklediğimiz için, ekrana baştan sona (tersten) yazdırıyoruz
+        printf("Rota: ");
+        for (int i = path_length - 1; i >= 0; i--) {
+            Node* n = graph->nodes[path[i]];
+            
+            // Eğer düğümün "Name" özelliği varsa ekrana onu yazdır, yoksa sadece ID yazdır
+            char* name = "Isimsiz";
+            if (n->property_count > 0 && n->properties[0].type == TYPE_STRING) {
+                name = n->properties[0].value.s_val;
+            }
+            
+            printf("%s", name);
+            if (i > 0) printf(" -> ");
+        }
+        printf("\nBaglanti Mesafesi (Derece): %d\n", path_length - 1);
+    } else {
+        printf("Hedefe ulasilamadi! Düğümler arasinda bir baglanti yok.\n");
+    }
+
+    free(visited);
+    free(parent);
+}

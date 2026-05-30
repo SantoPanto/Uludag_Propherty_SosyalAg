@@ -9,7 +9,7 @@ void bfs_and_find_degrees(Graph* graph, int start_node_id);
 void dfs(Graph* graph, int start_node_id);
 void recommend_friends(Graph* graph, int target_user_id);
 void dfs_full_network(Graph* graph);
-
+void find_shortest_path(Graph* graph, int start_node_id, int target_node_id);
 
 int main() {
     printf("--- Faz 2 ve 3: Tam Entegrasyon Testi ---\n\n");
@@ -69,6 +69,11 @@ int main() {
     // --- TEST 4: KOPUK AĞLARI BULAN GLOBAL DFS ---
     printf("\n=== GLOBAL DFS ===\n");
     dfs_full_network(net); // 5. kullanıcının ayrı bir adada (bileşen) olduğunu göstermeli
+
+    // --- TEST 5: EN KISA YOL (SHORTEST PATH) ---
+    printf("\n=== EN KISA YOL BULUCU (BFS PATHFINDING) ===\n");
+    // Süha ile Emre (4) arasındaki en kısa bağlantı rotasını bul
+    find_shortest_path(net, 2, 4);
 
     // Belleği temizle
     free_graph(net);
