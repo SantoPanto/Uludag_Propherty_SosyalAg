@@ -86,19 +86,38 @@ void dfs(Graph* graph, int start_node_id) {
     free(visited);
 }
 
+// Ağdaki tüm düğümleri eksiksiz tarayan Global DFS
+void dfs_full_network(Graph* graph) {
+    bool* visited = (bool*)calloc(graph->capacity, sizeof(bool));
+    int component_count = 0;
+
+    printf("\n--- Tum Agin Derinlik Oncelikli Taranmasi (Global DFS) ---\n");
+
+    for (int i = 0; i < graph->node_count; i++) {
+        if (!visited[i]) {
+            component_count++;
+            printf("\n>> Baglanti Bileseni %d Basliyor (Baslangic ID: %d):\n", component_count, graph->nodes[i]->id);
+            dfs_util(graph, i, visited); // Mevcut yardımcı fonksiyonumuzu kullanıyoruz
+        }
+    }
+    
+    printf("\n[i] Agda toplam %d farkli bagimsiz grup (bilesen) bulundu.\n", component_count);
+    free(visited);
+}
+
 void recommend_friends(Graph* graph, int target_user_id) {
     int target_idx = find_node_index(graph, target_user_id);
     if(target_idx == -1) return;
 
-    // Hızlı kontrol için hedef kullanıcının mevcut arkadaşlarını işaretleyelim
     bool* is_direct_friend = (bool*)calloc(graph->capacity, sizeof(bool));
-    is_direct_friend[target_idx] = true; // Kendisini arkadaş listesine alma
+    int* mutual_friend_scores = (int*)calloc(graph->capacity, sizeof(int)); // YENİ: Skor tablosu
     
-    // İlk Tarama: Doğrudan arkadaşları bul ve işaretle
+    is_direct_friend[target_idx] = true; 
+    
+    // 1. Doğrudan arkadaşları bul ve işaretle
     AdjListNode* adj = graph->adjLists[target_idx];
     while (adj != NULL) {
         if (adj->edge->type == FRIEND) {
-            // DİKKAT: Burada 'int' ile değişkeni tanımlıyoruz
             int direct_friend_idx = find_node_index(graph, adj->edge->target_id);
             if (direct_friend_idx != -1) {
                 is_direct_friend[direct_friend_idx] = true;
@@ -107,30 +126,19 @@ void recommend_friends(Graph* graph, int target_user_id) {
         adj = adj->next;
     }
 
-    printf("\n--- Kullanici %d Icin Arkadas Onerileri (Triadic Closure) ---\n", target_user_id);
-    
-    // İkinci Tarama: Arkadaşların arkadaşlarına (C kişilerine) bak
+    // 2. Arkadaşların arkadaşlarını bul ve SKORLARINI artır
     adj = graph->adjLists[target_idx];
-    bool suggestion_made = false;
-
     while (adj != NULL) {
         if (adj->edge->type == FRIEND) {
-            // DİKKAT: friend_idx burada 'int' ile yeniden tanımlanıyor
             int friend_idx = find_node_index(graph, adj->edge->target_id);
-            
             if (friend_idx != -1) {
-                // Arkadaşın arkadaş listesine bak (C kişileri)
                 AdjListNode* f_adj = graph->adjLists[friend_idx];
                 while (f_adj != NULL) {
                     if (f_adj->edge->type == FRIEND) {
                         int fof_idx = find_node_index(graph, f_adj->edge->target_id);
-                        
-                        // C kişisi zaten A'nın arkadaşı değilse (veya kendisi değilse)
+                        // C kişisi doğrudan arkadaşımız değilse skorunu artır
                         if (fof_idx != -1 && !is_direct_friend[fof_idx]) {
-                            printf("[+] Oneri: %d (Ortak Arkadasiniz: %d)\n", f_adj->edge->target_id, adj->edge->target_id);
-                            
-                            is_direct_friend[fof_idx] = true; // Tekrar önermemek için işaretle
-                            suggestion_made = true;
+                            mutual_friend_scores[fof_idx]++; // SKOR ARTIRIMI
                         }
                     }
                     f_adj = f_adj->next;
@@ -140,9 +148,18 @@ void recommend_friends(Graph* graph, int target_user_id) {
         adj = adj->next;
     }
 
-    if(!suggestion_made) {
-        printf("Su an icin yeni bir arkadas onerisi bulunamadi.\n");
+    // 3. Sonuçları listele (En az 1 ortak arkadaşı olanlar)
+    printf("\n--- Kullanici %d Icin Arkadas Onerileri ---\n", target_user_id);
+    bool suggestion_made = false;
+    for (int i = 0; i < graph->capacity; i++) {
+        if (mutual_friend_scores[i] > 0) {
+            printf("[+] Oneri: Kullanici ID %d | Ortak Arkadas Sayisi: %d\n", graph->nodes[i]->id, mutual_friend_scores[i]);
+            suggestion_made = true;
+        }
     }
 
+    if(!suggestion_made) printf("Su an icin yeni bir arkadas onerisi bulunamadi.\n");
+
     free(is_direct_friend);
+    free(mutual_friend_scores);
 }
