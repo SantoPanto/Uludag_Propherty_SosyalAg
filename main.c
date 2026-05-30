@@ -1,37 +1,85 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "graph_adj.h"
+#include "hash_table.h"
+#include "trie.h"
+
+// algorithms.c içerisindeki fonksiyonları burada tanıtıyoruz
+void bfs_and_find_degrees(Graph* graph, int start_node_id);
+void dfs(Graph* graph, int start_node_id);
+void recommend_friends(Graph* graph, int target_user_id);
+void dfs_full_network(Graph* graph);
+void find_shortest_path(Graph* graph, int start_node_id, int target_node_id);
 
 int main() {
-    printf("--- Sosyal Ag Graf Modeli Testi ---\n\n");
+    printf("--- Faz 2 ve 3: Tam Entegrasyon Testi ---\n\n");
 
-    // 1. Grafı oluştur
-    Graph* net = create_graph(5);
+    Graph* net = create_graph(10); 
+    HashTable* ht = create_hash_table(20); // O(1) arama için Hash Table
+    TrieNode* trie_root = createTrieNode(); // Otomatik tamamlama için Trie
 
-    // 2. Düğümler oluştur
-    Node* user1 = create_node(1, USER);
-    Node* photo1 = create_node(101, PHOTO);
+    // 1. Düğümleri Oluştur ve İsim (Property) Ekle
+    Node* u1 = create_node(1, USER);
+    add_property_to_node(u1, "Name", TYPE_STRING, "Fatih Sahin");
 
-    // 3. Düğümleri grafa ekle
-    add_node_to_graph(net, user1);
-    add_node_to_graph(net, photo1);
+    Node* u2 = create_node(2, USER);
+    add_property_to_node(u2, "Name", TYPE_STRING, "Suha");
 
-    // 4. Kenar ekle (User Photo'yu beğendi)
-    add_edge(net, 1, 101, LIKES, true);
+    Node* u3 = create_node(3, USER);
+    add_property_to_node(u3, "Name", TYPE_STRING, "Aybey");
 
-    // 5. Kenara özellik ekle (Beğeni tarihi)
-    char* date = "2026-04-27";
-    // Not: add_edge doğrudan Edge dönmediği için head üzerinden erişiyoruz
-    if(net->adjLists[0] != NULL) {
-        add_property_to_edge(&(net->adjLists[0]->edge), "LikeDate", TYPE_STRING, date);
+    Node* u4 = create_node(4, USER);
+    add_property_to_node(u4, "Name", TYPE_STRING, "Emre");
+    
+    // İzole bir kullanıcı ekleyelim (Global DFS testi için)
+    Node* u5 = create_node(5, USER);
+    add_property_to_node(u5, "Name", TYPE_STRING, "Yabanci Kullanici");
+
+    // Düğümleri Graf, Hash Table ve Trie'ye Kaydet (Üçlü Entegrasyon)
+    Node* users[] = {u1, u2, u3, u4, u5};
+    for(int i=0; i<5; i++) {
+        add_node_to_graph(net, users[i]);
+        insert_to_hash(ht, users[i]);
+        
+        // İsmi Trie'ye ekle (Property'den ismi çekiyoruz)
+        char* name = users[i]->properties[0].value.s_val;
+        insertToTrie(trie_root, name, users[i]);
     }
 
-    printf("Dugumler ve Kenarlar basariyla baglandi!\n");
-    printf("User(ID:%d) -> Photo(ID:%d) iliskisi kuruldu.\n\n", user1->id, photo1->id);
+    // 2. Kenarları Ekle
+    add_edge(net, 1, 2, FRIEND, false); // Fatih - Süha
+    add_edge(net, 2, 3, FRIEND, false); // Süha - Aybey
+    add_edge(net, 3, 4, FRIEND, false); // Aybey - Emre
+    add_edge(net, 1, 4, FRIEND, false); // Fatih - Emre (Ortak arkadaş testini güçlendirmek için)
 
-    // 6. Belleği temizle
+    // --- TEST 1: TRIE İLE İSİM ARAMA ---
+    printf("\n=== TRIE OTOMATIK TAMAMLAMA TESTI ===\n");
+    autocomplete(trie_root, "fa");  // "fa" yazan birine "fatih sahin" önermeli
+    autocomplete(trie_root, "su");
+
+    // --- TEST 2: HASH TABLE İLE HIZLI DOĞRULAMA ---
+    printf("\n=== HASH TABLE O(1) ARAMA TESTI ===\n");
+    Node* found = get_from_hash(ht, 3);
+    if(found) printf("3 ID'li kullanici hizlica bulundu: %s\n", found->properties[0].value.s_val);
+
+    // --- TEST 3: ORTAK ARKADAŞ SKORLAMASI ---
+    printf("\n=== GELISMIS TRIADIC CLOSURE ===\n");
+    recommend_friends(net, 2); // Süha için öneri isteyelim
+
+    // --- TEST 4: KOPUK AĞLARI BULAN GLOBAL DFS ---
+    printf("\n=== GLOBAL DFS ===\n");
+    dfs_full_network(net); // 5. kullanıcının ayrı bir adada (bileşen) olduğunu göstermeli
+
+    // --- TEST 5: EN KISA YOL (SHORTEST PATH) ---
+    printf("\n=== EN KISA YOL BULUCU (BFS PATHFINDING) ===\n");
+    // Süha ile Emre (4) arasındaki en kısa bağlantı rotasını bul
+    find_shortest_path(net, 2, 4);
+
+    // Belleği temizle
     free_graph(net);
-    printf("Bellek temizlendi, program sorunsuz kapandi.\n");
+    free_hash_table(ht);
+    freeTrie(trie_root);
+    printf("\n[+] Test tamamlandi. Tum bellek (Graf, Hash, Trie) temizlendi.\n");
 
     return 0;
 }
