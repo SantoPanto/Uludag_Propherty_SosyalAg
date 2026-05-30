@@ -43,13 +43,14 @@ void add_edge(Graph* graph, int src_id, int dest_id, EdgeType type, bool is_dire
 
     // Yeni bir bağlı liste düğümü oluştur (malloc)
     AdjListNode* newNode = (AdjListNode*)malloc(sizeof(AdjListNode));
+    newNode->edge = (Edge*)malloc(sizeof(Edge));
 
     // Kenar verilerini arkadaşının struct yapısına göre doldur
-    newNode->edge.source_id = src_id;
-    newNode->edge.target_id = dest_id;
-    newNode->edge.type = type;
-    newNode->edge.properties = NULL;
-    newNode->edge.property_count = 0;
+    newNode->edge->source_id = src_id;
+    newNode->edge->target_id = dest_id;
+    newNode->edge->type = type;
+    newNode->edge->properties = NULL;
+    newNode->edge->property_count = 0;
 
     // BAĞLI LİSTE MANTIRI: Yeni elemanı listenin başına ekle (Pointer manipülasyonu)
     newNode->next = graph->adjLists[src_idx];
@@ -98,12 +99,15 @@ void free_graph(Graph* graph) {
             AdjListNode* temp = current;
             current = current->next;
 
-            // Kenar içindeki dinamik özellikleri temizle
-            for(int j=0; j < temp->edge.property_count; j++) {
-                free(temp->edge.properties[j].name);
-                if(temp->edge.properties[j].type == TYPE_STRING) free(temp->edge.properties[j].value.s_val);
+            // Kenar içindeki dinamik özellikleri temizle (ok -> ile değiştirildi)
+            for(int j=0; j < temp->edge->property_count; j++) {
+                free(temp->edge->properties[j].name);
+                if(temp->edge->properties[j].type == TYPE_STRING) {
+                    free(temp->edge->properties[j].value.s_val);
+                }
             }
-            free(temp->edge.properties);
+            free(temp->edge->properties);
+            free(temp->edge); // YENİ: Edge pointer olduğu için onu da siliyoruz
             free(temp);
         }
         // 1. kişinin free_node fonksiyonunu kullanarak düğümü temizle
