@@ -111,7 +111,7 @@ void free_graph(Graph* graph) {
             free(temp);
         }
         // 1. kişinin free_node fonksiyonunu kullanarak düğümü temizle
-        free_node(graph->nodes[i]);
+       // free_node(graph->nodes[i]);
     }
     free(graph->nodes);
     free(graph->adjLists);
