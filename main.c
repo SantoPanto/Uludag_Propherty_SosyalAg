@@ -5,6 +5,7 @@
 #include "hash_table.h"
 #include "trie.h"
 #include "data_generator.h"
+#include "queries.h"
 
 // algorithms.c içerisindeki fonksiyonları burada tanıtıyoruz
 void bfs_and_find_degrees(Graph* graph, int start_node_id);
@@ -23,7 +24,7 @@ int main() {
     int test_events = 500;
     int max_nodes = test_users + test_photos + test_events + 100;
 
-    Graph* net = create_graph(max_nodes); 
+    Graph* net = create_graph(max_nodes);
     HashTable* ht = create_hash_table(max_nodes * 2); // Çakışmaları azaltmak için kapasiteyi büyük tutuyoruz
     TrieNode* trie_root = createTrieNode();
 
@@ -68,11 +69,16 @@ int main() {
     cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("[-] BFS En Kisa Yol Bulma Suresi: %f saniye\n\n", cpu_time_used);
 
+// --- EMINE: FAZ 2 SORGULARI ---
+    find_most_active_node(net);
+    find_friends_events_photos(net, 1);
+
     // Belleği temizleme
     free_graph(net);
     free_hash_table(ht);
     freeTrie(trie_root);
-    printf("[+] Testler tamamlandi ve bellek temizlendi.\n");
+
+    printf("\n[+] Testler tamamlandi ve bellek temizlendi.\n");
 
     return 0;
 
@@ -81,7 +87,7 @@ int main() {
     FATIHIN KODLAR
      printf("--- Faz 2 ve 3: Tam Entegrasyon Testi ---\n\n");
 
-    Graph* net = create_graph(10); 
+    Graph* net = create_graph(10);
     HashTable* ht = create_hash_table(20); // O(1) arama için Hash Table
     TrieNode* trie_root = createTrieNode(); // Otomatik tamamlama için Trie
 
@@ -97,7 +103,7 @@ int main() {
 
     Node* u4 = create_node(4, USER);
     add_property_to_node(u4, "Name", TYPE_STRING, "Emre");
-    
+
     // İzole bir kullanıcı ekleyelim (Global DFS testi için)
     Node* u5 = create_node(5, USER);
     add_property_to_node(u5, "Name", TYPE_STRING, "Yabanci Kullanici");
@@ -107,7 +113,7 @@ int main() {
     for(int i=0; i<5; i++) {
         add_node_to_graph(net, users[i]);
         insert_to_hash(ht, users[i]);
-        
+
         // İsmi Trie'ye ekle (Property'den ismi çekiyoruz)
         char* name = users[i]->properties[0].value.s_val;
         insertToTrie(trie_root, name, users[i]);
@@ -149,6 +155,32 @@ int main() {
     printf("\n[+] Test tamamlandi. Tum bellek (Graf, Hash, Trie) temizlendi.\n");
 
     return 0;
+
     */
-   
+
+    /*
+
+// --- EMINE: FAZ 2 SORGULARI ---
+    find_most_active_node(net);
+    find_friends_events_photos(net, 1);
+
+// EGER BU YAZI EKRANA CIKARSA EMINENIN KODLARI KUSURSUZDUR
+    printf("\n[+] >>> EMINE'NIN KODU SORUNSUZ CALISTI VE BITTI <<<\n\n");
+
+    printf("[DEBUG] free_graph calisiyor...\n");
+    free_graph(net);
+    printf("[DEBUG] free_graph sorunsuz bitti!\n\n");
+
+    printf("[DEBUG] free_hash_table calisiyor...\n");
+    free_hash_table(ht);
+    printf("[DEBUG] free_hash_table sorunsuz bitti!\n\n");
+
+    printf("[DEBUG] freeTrie calisiyor...\n");
+    freeTrie(trie_root);  // Eger seninki trie_root degilse projedeki adini yaz
+    printf("[DEBUG] freeTrie sorunsuz bitti!\n\n");
+    printf("[+] Testler tamamlandi ve bellek temizlendi.\n");
+
+    return 0;
+*/
+
 }
