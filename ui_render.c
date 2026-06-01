@@ -3,7 +3,7 @@
 #include "raymath.h"
 #include "ui_render.h"
 #include "graph_adj.h"
-#include "ui_integration.h" // Boran'ýn fonksiyonlarýný tanýmak için
+#include "ui_integration.h" // Boran'ï¿½n fonksiyonlarï¿½nï¿½ tanï¿½mak iï¿½in
 
 Camera2D camera = { 0 };
 Node* selected_node = NULL;
@@ -19,7 +19,7 @@ void init_graphics_window() {
 }
 
 void draw_graph_network(Graph* graph) {
-    // --- 1. KAMERA KONTROLLERÝ ---
+    // --- 1. KAMERA KONTROLLERï¿½ ---
     float wheel = GetMouseWheelMove();
     if (wheel != 0) {
         Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
@@ -39,10 +39,10 @@ void draw_graph_network(Graph* graph) {
     BeginDrawing();
     ClearBackground(RAYWHITE);
 
-    // --- KAMERA DÜNYASI (Senin Alanýn) ---
+    // --- KAMERA Dï¿½NYASI (Senin Alanï¿½n) ---
     BeginMode2D(camera);
 
-    // Çizgiler (Kenarlar)
+    // ï¿½izgiler (Kenarlar)
     for (int i = 0; i < graph->node_count; i++) {
         Node* src_node = graph->nodes[i];
         AdjListNode* adj = graph->adjLists[i];
@@ -63,7 +63,7 @@ void draw_graph_network(Graph* graph) {
         }
     }
 
-    // Düðümler
+    // Dï¿½ï¿½ï¿½mler
     for (int i = 0; i < graph->node_count; i++) {
         Node* n = graph->nodes[i];
         bool is_selected = (selected_node != NULL && selected_node->id == n->id);
@@ -81,12 +81,12 @@ void draw_graph_network(Graph* graph) {
         }
 
         if (camera.zoom > 1.2f) {
-            // Harita üzerindeki ID yazýlarýnýn boyutu 10'dan 20'ye çýkarýldý
+            // Harita ï¿½zerindeki ID yazï¿½larï¿½nï¿½n boyutu 10'dan 20'ye ï¿½ï¿½karï¿½ldï¿½
             DrawText(TextFormat("ID:%d", n->id), (int)n->x - 10, (int)n->y - 18, 14, DARKGRAY);
         }
     }
 
-    // Týklama Tespiti
+    // Tï¿½klama Tespiti
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
         Vector2 mouse_world_pos = GetScreenToWorld2D(GetMousePosition(), camera);
         bool clicked_on_node = false;
@@ -103,33 +103,33 @@ void draw_graph_network(Graph* graph) {
     }
 
     EndMode2D();
-    // --- KAMERA DÜNYASI BÝTTÝ ---
+    // --- KAMERA Dï¿½NYASI Bï¿½TTï¿½ ---
 
 
-    // --- EKRAN DÜNYASI (Boran'ýn Alaný) ---
+    // --- EKRAN Dï¿½NYASI (Boran'ï¿½n Alanï¿½) ---
     int screen_width = GetScreenWidth();
     int screen_height = GetScreenHeight();
 
-    // ui_integration.c dosyasýndaki fonksiyonu tetikliyoruz
+    // ui_integration.c dosyasï¿½ndaki fonksiyonu tetikliyoruz
     Boran_draw_ui_panel(selected_node, search_text_buffer, screen_width, screen_height);
 
-    // --- YENÝ EKLENEN: ARAMA KUTUSU ENTER MANTIÐI ---
+    // --- YENï¿½ EKLENEN: ARAMA KUTUSU ENTER MANTIï¿½I ---
     if (IsKeyPressed(KEY_ENTER)) {
         int aranan_id = 0;
 
-        // Kullanýcý "User_15", "Event_5" veya sadece "15" yazarsa sayýyý bul
+        // Kullanï¿½cï¿½ "User_15", "Event_5" veya sadece "15" yazarsa sayï¿½yï¿½ bul
         if (sscanf(search_text_buffer, "User_%d", &aranan_id) == 1 ||
             sscanf(search_text_buffer, "Event_%d", &aranan_id) == 1 ||
             sscanf(search_text_buffer, "%d", &aranan_id) == 1) {
 
-            // Graf içinde o ID'ye sahip düðümü ara
+            // Graf iï¿½inde o ID'ye sahip dï¿½ï¿½ï¿½mï¿½ ara
             int target_idx = find_node_index(graph, aranan_id);
 
             if (target_idx != -1) {
-                // Düðümü bulursan onu seçili yap (Kýrmýzý yanacak)
+                // Dï¿½ï¿½ï¿½mï¿½ bulursan onu seï¿½ili yap (Kï¿½rmï¿½zï¿½ yanacak)
                 selected_node = graph->nodes[target_idx];
 
-                // Kamerayý direkt hedefin üstüne kitle ve yakýnlaþ
+                // Kamerayï¿½ direkt hedefin ï¿½stï¿½ne kitle ve yakï¿½nlaï¿½
                 camera.target = (Vector2){ selected_node->x, selected_node->y };
                 camera.zoom = 2.0f;
             }
@@ -137,10 +137,10 @@ void draw_graph_network(Graph* graph) {
     }
     // ------------------------------------------------
 
-    // FPS ve Ýstatistik Göstergesi (Yazýlar büyüdüðü için arka plan kutusu da büyütüldü)
+    // FPS ve ï¿½statistik Gï¿½stergesi (Yazï¿½lar bï¿½yï¿½dï¿½ï¿½ï¿½ iï¿½in arka plan kutusu da bï¿½yï¿½tï¿½ldï¿½)
     DrawRectangle(5, 5, 200, 60, Fade(WHITE, 0.8f));
     DrawFPS(10, 10);
-    // Sol üstteki "Dugum Sayisi" yazýsý 10'dan 20'ye çýkarýldý
+    // Sol ï¿½stteki "Dugum Sayisi" yazï¿½sï¿½ 10'dan 20'ye ï¿½ï¿½karï¿½ldï¿½
     DrawText(TextFormat("Dugum Sayisi: %d", graph->node_count), 10, 35, 20, DARKGRAY);
 
     EndDrawing();

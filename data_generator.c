@@ -33,7 +33,7 @@ void init_synthetic_data(Graph* net, HashTable* ht, TrieNode* trie_root,
         // Veri yapilarina kayit
         add_node_to_graph(net, u);
         insert_to_hash(ht, u);
-        insertToTrie(trie_root, name_buffer, u); // Sadece isimleri Trie'ye ekliyoruz
+        Boran_insertToTrie(trie_root, name_buffer, u); // Sadece isimleri Trie'ye ekliyoruz
         
         current_id++;
     }
