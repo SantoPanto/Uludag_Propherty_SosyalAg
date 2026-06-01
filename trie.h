@@ -6,35 +6,23 @@
 #include "graph_models.h" // Graf düğümlerini (Node) Trie ile eşleştirmek için içeri aktarıyoruz
 
 // Standart ASCII karakterleri kapsamak için 128 boyutunda bir dizi kullanıyoruz.
-// DİKKAT: trie.c içinde diziye erişirken negatif sayılardan kaçınmak için 
-// mutlaka (unsigned char) casting işlemi yapılmalıdır!
 #define ALPHABET_SIZE 128
 
-/*
- * İSİM ÇAKIŞMASI ÇÖZÜMÜ (COLLISION HANDLING):
- * Sosyal ağlarda aynı isme sahip birden fazla kullanıcı olabilir (Örn: iki farklı "Ali" hesabı).
- * Trie ağacının yaprak düğümünde tek bir pointer tutmak yerine bir Bağlı Liste (Linked List)
- * tutarak, aynı isimdeki tüm kullanıcıların bellek adreslerini kaybetmeden saklıyoruz.
- */
 typedef struct NodeList {
     Node* graphNode;       // 1. Kişinin tasarladığı asıl graf düğümünün bellek adresi
     struct NodeList* next; // Sonraki aynı isimli düğüme işaretçi
 } NodeList;
 
-/*
- * TRIE (ÖNEK AĞACI) DÜĞÜM YAPISI:
- * Her düğüm, alfabedeki karakter sayısı kadar çocuk barındırabilir.
- */
 typedef struct TrieNode {
-    struct TrieNode* children[ALPHABET_SIZE]; // Alt karakterlere giden yollar (Branching)
-    bool isEndOfWord;                         // Bu düğüm geçerli bir kelimenin son harfi mi?
-    NodeList* matchingNodes;                  // Eğer kelimenin sonuysa, bu isme sahip graf düğümleri listesi
+    struct TrieNode* children[ALPHABET_SIZE]; 
+    bool isEndOfWord;                         
+    NodeList* matchingNodes;                  
 } TrieNode;
 
-// Dışarıdan erişilebilecek fonksiyon prototipleri (API İmzaları)
-TrieNode* createTrieNode();
-void insertToTrie(TrieNode* root, const char* word, Node* gNode);
-void autocomplete(TrieNode* root, const char* prefix);
-void freeTrie(TrieNode* root);
+// Boran: Dışarıdan erişilebilecek fonksiyon prototipleri (API İmzaları)
+TrieNode* Boran_createTrieNode();
+void Boran_insertToTrie(TrieNode* root, const char* word, Node* gNode);
+void Boran_autocomplete(TrieNode* root, const char* prefix);
+void Boran_freeTrie(TrieNode* root);
 
 #endif // TRIE_H
