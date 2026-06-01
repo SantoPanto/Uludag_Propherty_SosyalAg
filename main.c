@@ -6,22 +6,26 @@
 #include "trie.h"
 #include "data_generator.h"
 #include "queries.h"
-
+#include "ui_render.h"
+#include "raylib.h"
 // algorithms.c içerisindeki fonksiyonları burada tanıtıyoruz
 void bfs_and_find_degrees(Graph* graph, int start_node_id);
 void dfs(Graph* graph, int start_node_id);
 void recommend_friends(Graph* graph, int target_user_id);
 void dfs_full_network(Graph* graph);
 void find_shortest_path(Graph* graph, int start_node_id, int target_node_id);
-
+// Arayuz fonksiyonlarini derleyiciye manuel tanitiyoruz
+void init_graphics_window();
+void draw_graph_network(Graph* graph);
+void close_graphics_window();
 int main() {
 
     printf("=== FAZ 2: PERFORMANS VE DARBOGAZ TESTLERI ===\n\n");
 
     // Test parametreleri (Ölçeklenebilirliği görmek için bu sayıları artırarak testler yapmalısınız)
-    int test_users = 5000;
-    int test_photos = 2000;
-    int test_events = 500;
+    int test_users = 50;
+    int test_photos = 20;
+    int test_events = 10;
     int max_nodes = test_users + test_photos + test_events + 100;
 
     Graph* net = create_graph(max_nodes);
@@ -72,6 +76,21 @@ int main() {
 // --- EMINE: FAZ 2 SORGULARI ---
     find_most_active_node(net);
     find_friends_events_photos(net, 1);
+
+
+    // --- FAZ 3: ARAYÜZ (UI) BAŞLATMA ---
+    printf("\n[+] Arayuz baslatiliyor... Lutfen bekleyin.\n");
+
+    init_graphics_window();
+
+    // Pencere çarpıdan kapatılana kadar döner
+    while (!WindowShouldClose()) {
+        // Senin değişkenin 'net' olduğu için burayı net olarak düzelttim
+        draw_graph_network(net);
+    }
+
+    close_graphics_window();
+    // ------------------------------------
 
     // Belleği temizleme
     free_graph(net);

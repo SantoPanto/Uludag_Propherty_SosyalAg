@@ -18,7 +18,9 @@ Node* create_node(int id, NodeType type) {
     new_node->type = type;
     new_node->properties = NULL; // Başlangıçta özellik yok
     new_node->property_count = 0;
-
+    // create_node fonksiyonunun içindeki atamaların altına şunu ekle:
+    new_node->x = (float)(rand() % 1600) - 800; // Rastgele x pozisyonu
+    new_node->y = (float)(rand() % 1200) - 600; // Rastgele y pozisyonu
     return new_node;
 }
 

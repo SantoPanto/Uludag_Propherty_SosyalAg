@@ -1,77 +1,64 @@
-#include <stdio.h>
+#include "raylib.h"
+#include "graph_adj.h"
 #include "ui_integration.h"
-
-// Boran: Arayuzden (UI) bir dugume tiklandiginda cagrilacak fonksiyon.
-// Faz 1'deki Hash Table'i kullanarak dugum detaylarini O(1) hizinda dondurur.
-Node* Boran_get_node_details_for_ui(HashTable* ht, int node_id) {
-    if (ht == NULL) return NULL;
-    
-    // Tiklanan dugumun IDsini hash tablosunda bul
-    Node* clicked_node = get_from_hash(ht, node_id);
-    
-    if (clicked_node != NULL) {
-        printf("[UI PANEL] %d ID'li dugum bilgileri arayuze gonderiliyor...\n", node_id);
-    } else {
-        printf("[UI PANEL HATA] %d ID'li dugum bulunamadi!\n", node_id);
-    }
-    
-    return clicked_node;
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+float TextToFloat(const char *text) {
+    return (float)atof(text);
 }
+// Raygui sadece burada implemente edilecek!
+#define RAYGUI_IMPLEMENTATION
+#include "raygui.h"
 
-// Boran: Kullanici arama cubuguna metin girdiginde cagrilacak fonksiyon.
-// Faz 1'deki Trie (Onek Agaci) yapisini tetikleyerek UI'a sonuc uretir.
-void Boran_get_autocomplete_results_for_ui(TrieNode* root, const char* prefix) {
-    if (root == NULL || prefix == NULL) return;
-    
-    printf("[UI SEARCH BAR] '%s' icin arama sonuclari getiriliyor:\n", prefix);
-    
-    // Faz 1'deki orijinal arama fonksiyonunu cagir
-    autocomplete(root, prefix);
-}
-
-// Boran: UI (Arayuz) yan panelinde gosterilecek metni hazirlar.
-// Gelen dugumun tum ozelliklerini alt alta okunabilir bir string (metin) formatina cevirir.
-void Boran_format_side_panel_text(Node* node, char* output_buffer, int buffer_size) {
-    if (node == NULL || output_buffer == NULL) {
-        snprintf(output_buffer, buffer_size, "Lutfen detaylarini gormek icin bir dugume tiklayin.");
+// Yardýmcý Fonksiyon: Seçili düðümün özelliklerini metne çevirir
+void Boran_format_side_panel_text(Node* node, char* buffer, int max_len) {
+    if (node == NULL) {
+        snprintf(buffer, max_len, "Lutfen haritadan bir dugume tiklayin.");
         return;
     }
 
-    // Baslangic bilgilerini yaz
-    int current_len = snprintf(output_buffer, buffer_size, 
-             "--- DUGUM DETAYLARI ---\n"
-             "ID: %d\n"
-             "Tip: %d (0:User, 1:Photo, 2:Event)\n"
-             "-----------------------\n", 
-             node->id, node->type);
+    // Düðümün ID ve Tipini yaz
+    char* type_str = (node->type == USER) ? "Kullanici" : (node->type == PHOTO) ? "Fotograf" : "Etkinlik";
+    int offset = snprintf(buffer, max_len, "ID: %d\nTip: %s\n\n--- OZELLIKLER ---\n", node->id, type_str);
 
-    // Eger dugumun dinamik ozellikleri (Property) varsa, onlari da ekle
-    if (node->property_count > 0 && node->properties != NULL) {
-        for (int i = 0; i < node->property_count; i++) {
-            // Buffer'in sinirini asmamak icin kalan boslugu kontrol et
-            if (current_len >= buffer_size - 1) break; 
-            
-            Property* prop = &node->properties[i];
-            
-            // Arkadasinin Union yapisina uygun sekilde verileri arayuz icin hazirliyoruz
-            if (prop->type == TYPE_STRING && prop->value.s_val != NULL) {
-                current_len += snprintf(output_buffer + current_len, buffer_size - current_len, 
-                                        "[*] %s: %s\n", prop->name, prop->value.s_val);
-            } 
-            else if (prop->type == TYPE_INTEGER) {
-                current_len += snprintf(output_buffer + current_len, buffer_size - current_len, 
-                                        "[*] %s: %d\n", prop->name, prop->value.i_val);
-            } 
-            else if (prop->type == TYPE_FLOAT) {
-                current_len += snprintf(output_buffer + current_len, buffer_size - current_len, 
-                                        "[*] %s: %.2f\n", prop->name, prop->value.f_val);
-            }
-            else if (prop->type == TYPE_BOOLEAN) {
-                current_len += snprintf(output_buffer + current_len, buffer_size - current_len, 
-                                        "[*] %s: %s\n", prop->name, prop->value.b_val ? "Evet" : "Hayir");
-            }
+    // Düðümün içindeki dinamik özellikleri (Name, Age vb.) alt alta ekle
+    for (int i = 0; i < node->property_count; i++) {
+        if (offset >= max_len) break;
+
+        Property* p = &node->properties[i];
+        if (p->type == TYPE_STRING) {
+            offset += snprintf(buffer + offset, max_len - offset, "%s: %s\n", p->name, p->value.s_val);
+        } else if (p->type == TYPE_INTEGER) {
+            offset += snprintf(buffer + offset, max_len - offset, "%s: %d\n", p->name, p->value.i_val);
         }
-    } else {
-        snprintf(output_buffer + current_len, buffer_size - current_len, "Bu dugume ait ekstra ozellik bulunmuyor.\n");
     }
+}
+
+// Boran'ýn Ana Arayüz Çizim Fonksiyonu
+void Boran_draw_ui_panel(Node* selected_node, char* search_text_buffer, int screen_width, int screen_height) {
+    // Panel boyutlarini dinamik ayarlayalim (Ekranin sag tarafinda 350 piksel genislikte)
+    int panel_width = 350;
+    int panel_x = screen_width - panel_width;
+
+    // 1. Ana Yan Paneli Ciz
+    GuiPanel((Rectangle){ panel_x, 0, panel_width, screen_height }, "Sosyal Ag Yonetim Paneli");
+
+    // 2. Arama Cubugunu (Search Bar) Ciz
+    static bool search_edit_mode = false;
+    if (GuiTextBox((Rectangle){ panel_x + 20, 40, panel_width - 40, 30 }, search_text_buffer, 64, search_edit_mode)) {
+        search_edit_mode = !search_edit_mode; // Tiklandiginda yazi yazma modunu ac/kapat
+    }
+
+    // Arama cubugu etiketi
+    DrawText("Kullanici veya Etkinlik Ara:", panel_x + 20, 20, 10, DARKGRAY);
+
+    // 3. Dugum Detaylarini Goster
+    char detail_text[1024] = {0};
+
+    // Formatlayiciyi cagiriyoruz
+    Boran_format_side_panel_text(selected_node, detail_text, 1024);
+
+    // Formatlanmis metni ekranin sag paneline bas
+    DrawText(detail_text, panel_x + 20, 100, 16, BLACK);
 }
