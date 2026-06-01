@@ -30,7 +30,7 @@ int main() {
 
     Graph* net = create_graph(max_nodes);
     HashTable* ht = create_hash_table(max_nodes * 2); // Çakışmaları azaltmak için kapasiteyi büyük tutuyoruz
-    TrieNode* trie_root = createTrieNode();
+    TrieNode* trie_root = Boran_createTrieNode();
 
     clock_t start, end;
     double cpu_time_used;
@@ -58,7 +58,7 @@ int main() {
     // --- TEST 3: TRIE PREFIX ARAMA TESTİ ---
     printf("[3] Trie Otomatik Tamamlama Testi...\n");
     start = clock();
-    autocomplete(trie_root, "User_100"); // "User_100", "User_1000" gibi eşleşmeleri bulacak
+    Boran_autocomplete(trie_root, "User_100"); // "User_100", "User_1000" gibi eşleşmeleri bulacak
     end = clock();
     cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("[-] Trie Arama Suresi: %f saniye\n\n", cpu_time_used);
@@ -108,7 +108,7 @@ int main() {
 
     Graph* net = create_graph(10);
     HashTable* ht = create_hash_table(20); // O(1) arama için Hash Table
-    TrieNode* trie_root = createTrieNode(); // Otomatik tamamlama için Trie
+    TrieNode* trie_root = Boran_createTrieNode(); // Otomatik tamamlama için Trie
 
     // 1. Düğümleri Oluştur ve İsim (Property) Ekle
     Node* u1 = create_node(1, USER);
@@ -135,7 +135,7 @@ int main() {
 
         // İsmi Trie'ye ekle (Property'den ismi çekiyoruz)
         char* name = users[i]->properties[0].value.s_val;
-        insertToTrie(trie_root, name, users[i]);
+        Boran_insertToTrie(trie_root, name, users[i]);
     }
 
     // 2. Kenarları Ekle
@@ -146,8 +146,8 @@ int main() {
 
     // --- TEST 1: TRIE İLE İSİM ARAMA ---
     printf("\n=== TRIE OTOMATIK TAMAMLAMA TESTI ===\n");
-    autocomplete(trie_root, "fa");  // "fa" yazan birine "fatih sahin" önermeli
-    autocomplete(trie_root, "su");
+    Boran_autocomplete(trie_root, "fa");  // "fa" yazan birine "fatih sahin" önermeli
+    Boran_autocomplete(trie_root, "su");
 
     // --- TEST 2: HASH TABLE İLE HIZLI DOĞRULAMA ---
     printf("\n=== HASH TABLE O(1) ARAMA TESTI ===\n");
