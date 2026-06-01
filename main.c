@@ -95,7 +95,7 @@ int main() {
     // Belleği temizleme
     free_graph(net);
     free_hash_table(ht);
-    freeTrie(trie_root);
+    Boran_freeTrie(trie_root);
 
     printf("\n[+] Testler tamamlandi ve bellek temizlendi.\n");
 
@@ -170,7 +170,7 @@ int main() {
     // Belleği temizle
     free_graph(net);
     free_hash_table(ht);
-    freeTrie(trie_root);
+    Boran_freeTrie(trie_root);
     printf("\n[+] Test tamamlandi. Tum bellek (Graf, Hash, Trie) temizlendi.\n");
 
     return 0;
@@ -194,9 +194,9 @@ int main() {
     free_hash_table(ht);
     printf("[DEBUG] free_hash_table sorunsuz bitti!\n\n");
 
-    printf("[DEBUG] freeTrie calisiyor...\n");
-    freeTrie(trie_root);  // Eger seninki trie_root degilse projedeki adini yaz
-    printf("[DEBUG] freeTrie sorunsuz bitti!\n\n");
+    printf("[DEBUG] Boran_freeTrie calisiyor...\n");
+    Boran_freeTrie(trie_root);  // Eger seninki trie_root degilse projedeki adini yaz
+    printf("[DEBUG] Boran_freeTrie sorunsuz bitti!\n\n");
     printf("[+] Testler tamamlandi ve bellek temizlendi.\n");
 
     return 0;
