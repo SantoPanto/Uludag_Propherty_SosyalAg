@@ -2,13 +2,9 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
-
-// Projenizin ana veri yapısı başlık dosyaları
 #include "graph_adj.h"
 #include "hash_table.h"
 #include "trie.h"
-
-// Kendi başlık dosyamız
 #include "data_generator.h"
 
 void init_synthetic_data(Graph* net, HashTable* ht, TrieNode* trie_root, 
@@ -48,9 +44,12 @@ void init_synthetic_data(Graph* net, HashTable* ht, TrieNode* trie_root,
         sprintf(desc_buffer, "Photo_Desc_%d", current_id);
         add_property_to_node(p, "Description", TYPE_STRING, desc_buffer);
 
-        // Veri yapilarina kayit (Trie'ye eklemiyoruz cunku fotograflar isme gore aranmayacak)
+        // Veri yapilarina kayit
         add_node_to_graph(net, p);
         insert_to_hash(ht, p);
+        
+        // BORAN: Fotoğrafları da Trie ağacına ekliyoruz!
+        Boran_insertToTrie(trie_root, desc_buffer, p); 
         
         current_id++;
     }
@@ -68,6 +67,9 @@ void init_synthetic_data(Graph* net, HashTable* ht, TrieNode* trie_root,
         // Veri yapilarina kayit
         add_node_to_graph(net, e);
         insert_to_hash(ht, e);
+        
+        // BORAN: Etkinlikleri de Trie ağacına ekliyoruz!
+        Boran_insertToTrie(trie_root, title_buffer, e); 
         
         current_id++;
     }
