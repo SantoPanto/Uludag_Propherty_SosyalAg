@@ -1,9 +1,12 @@
 #include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 #include "raylib.h"
 #include "raymath.h"
 #include "ui_render.h"
 #include "graph_adj.h"
-#include "ui_integration.h" // Boran'�n fonksiyonlar�n� tan�mak i�in
+#include "ui_integration.h" 
+#include "trie.h"           
 
 Camera2D camera = { 0 };
 Node* selected_node = NULL;
@@ -18,8 +21,8 @@ void init_graphics_window() {
     camera.zoom = 1.0f;
 }
 
-void draw_graph_network(Graph* graph) {
-    // --- 1. KAMERA KONTROLLER� ---
+void draw_graph_network(Graph* graph, TrieNode* trie_root) {
+    // --- 1. KAMERA KONTROLLERİ ---
     float wheel = GetMouseWheelMove();
     if (wheel != 0) {
         Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
@@ -39,10 +42,10 @@ void draw_graph_network(Graph* graph) {
     BeginDrawing();
     ClearBackground(RAYWHITE);
 
-    // --- KAMERA D�NYASI (Senin Alan�n) ---
+    // --- KAMERA DÜNYASI ---
     BeginMode2D(camera);
 
-    // �izgiler (Kenarlar)
+    // Çizgiler (Kenarlar)
     for (int i = 0; i < graph->node_count; i++) {
         Node* src_node = graph->nodes[i];
         AdjListNode* adj = graph->adjLists[i];
@@ -63,7 +66,7 @@ void draw_graph_network(Graph* graph) {
         }
     }
 
-    // D���mler
+    // Düğümler
     for (int i = 0; i < graph->node_count; i++) {
         Node* n = graph->nodes[i];
         bool is_selected = (selected_node != NULL && selected_node->id == n->id);
@@ -81,12 +84,11 @@ void draw_graph_network(Graph* graph) {
         }
 
         if (camera.zoom > 1.2f) {
-            // Harita �zerindeki ID yaz�lar�n�n boyutu 10'dan 20'ye ��kar�ld�
             DrawText(TextFormat("ID:%d", n->id), (int)n->x - 10, (int)n->y - 18, 14, DARKGRAY);
         }
     }
 
-    // T�klama Tespiti
+    // Tıklama Tespiti
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
         Vector2 mouse_world_pos = GetScreenToWorld2D(GetMousePosition(), camera);
         bool clicked_on_node = false;
@@ -103,44 +105,67 @@ void draw_graph_network(Graph* graph) {
     }
 
     EndMode2D();
-    // --- KAMERA D�NYASI B�TT� ---
+    // --- KAMERA DÜNYASI BİTTİ ---
 
-
-    // --- EKRAN D�NYASI (Boran'�n Alan�) ---
+    // --- EKRAN DÜNYASI (UI Paneli) ---
     int screen_width = GetScreenWidth();
     int screen_height = GetScreenHeight();
 
-    // ui_integration.c dosyas�ndaki fonksiyonu tetikliyoruz
+    // Paneli çizdiriyoruz
     Boran_draw_ui_panel(selected_node, search_text_buffer, screen_width, screen_height);
 
-    // --- YEN� EKLENEN: ARAMA KUTUSU ENTER MANTI�I ---
-    if (IsKeyPressed(KEY_ENTER)) {
-        int aranan_id = 0;
+    // TRIE OTOMATİK TAMAMLAMA VE ARAMA ENTEGRASYONU ---
+    if (IsKeyPressed(KEY_ENTER) && strlen(search_text_buffer) > 0) {
+        
+        TrieNode* current = trie_root;
+        int length = strlen(search_text_buffer);
+        bool found = true;
 
-        // Kullan�c� "User_15", "Event_5" veya sadece "15" yazarsa say�y� bul
-        if (sscanf(search_text_buffer, "User_%d", &aranan_id) == 1 ||
-            sscanf(search_text_buffer, "Event_%d", &aranan_id) == 1 ||
-            sscanf(search_text_buffer, "%d", &aranan_id) == 1) {
+        // Ağaçta harf harf arama
+        for (int i = 0; i < length; i++) {
+            int index = tolower((unsigned char)search_text_buffer[i]);
+            
+            if (index < 0 || index >= ALPHABET_SIZE || current->children[index] == NULL) {
+                found = false;
+                break;
+            }
+            current = current->children[index];
+        }
 
-            // Graf i�inde o ID'ye sahip d���m� ara
-            int target_idx = find_node_index(graph, aranan_id);
+        // Eğer harfler bulunduysa tam kelimeyi bulana kadar derine in (Autocomplete)
+        if (found) {
+            TrieNode* autocomplete_node = current;
+            
+            // Eğer ulaştığımız yer tam bir kelime değilse, ilk geçerli kelimeyi bulana kadar çocuklara in
+            while (autocomplete_node != NULL && !autocomplete_node->isEndOfWord) {
+                bool go_deeper = false;
+                for (int k = 0; k < ALPHABET_SIZE; k++) {
+                    if (autocomplete_node->children[k] != NULL) {
+                        autocomplete_node = autocomplete_node->children[k];
+                        go_deeper = true;
+                        break; // Bulduğu ilk harften aşağı inmeye devam et
+                    }
+                }
+                if (!go_deeper) break; // Gidilecek yol kalmadıysa döngüyü kır
+            }
 
-            if (target_idx != -1) {
-                // D���m� bulursan onu se�ili yap (K�rm�z� yanacak)
-                selected_node = graph->nodes[target_idx];
-
-                // Kameray� direkt hedefin �st�ne kitle ve yak�nla�
+            // Ulaştığımız yerde geçerli bir graf düğümü varsa onu seç ve kamerayı uçur
+            if (autocomplete_node != NULL && autocomplete_node->isEndOfWord && autocomplete_node->matchingNodes != NULL) {
+                selected_node = autocomplete_node->matchingNodes->graphNode;
                 camera.target = (Vector2){ selected_node->x, selected_node->y };
                 camera.zoom = 2.0f;
+            } else {
+                selected_node = NULL; // Veri hatası varsa seçimi temizle
             }
+        } else {
+            selected_node = NULL; // Hiç eşleşme yoksa seçimi temizle
         }
     }
-    // ------------------------------------------------
+    // ------------------------------------------------------------------
 
-    // FPS ve �statistik G�stergesi (Yaz�lar b�y�d��� i�in arka plan kutusu da b�y�t�ld�)
+    // FPS ve İstatistik Göstergesi
     DrawRectangle(5, 5, 200, 60, Fade(WHITE, 0.8f));
     DrawFPS(10, 10);
-    // Sol �stteki "Dugum Sayisi" yaz�s� 10'dan 20'ye ��kar�ld�
     DrawText(TextFormat("Dugum Sayisi: %d", graph->node_count), 10, 35, 20, DARKGRAY);
 
     EndDrawing();
