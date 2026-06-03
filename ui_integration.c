@@ -4,25 +4,22 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-float TextToFloat(const char *text) {
-    return (float)atof(text);
-}
 // Raygui sadece burada implemente edilecek!
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
-// Yardýmcý Fonksiyon: Seçili düðümün özelliklerini metne çevirir
+// Yardï¿½mcï¿½ Fonksiyon: Seï¿½ili dï¿½ï¿½ï¿½mï¿½n ï¿½zelliklerini metne ï¿½evirir
 void Boran_format_side_panel_text(Node* node, char* buffer, int max_len) {
     if (node == NULL) {
         snprintf(buffer, max_len, "Lutfen haritadan bir dugume tiklayin.");
         return;
     }
 
-    // Düðümün ID ve Tipini yaz
+    // Dï¿½ï¿½ï¿½mï¿½n ID ve Tipini yaz
     char* type_str = (node->type == USER) ? "Kullanici" : (node->type == PHOTO) ? "Fotograf" : "Etkinlik";
     int offset = snprintf(buffer, max_len, "ID: %d\nTip: %s\n\n--- OZELLIKLER ---\n", node->id, type_str);
 
-    // Düðümün içindeki dinamik özellikleri (Name, Age vb.) alt alta ekle
+    // Dï¿½ï¿½ï¿½mï¿½n iï¿½indeki dinamik ï¿½zellikleri (Name, Age vb.) alt alta ekle
     for (int i = 0; i < node->property_count; i++) {
         if (offset >= max_len) break;
 
@@ -35,7 +32,7 @@ void Boran_format_side_panel_text(Node* node, char* buffer, int max_len) {
     }
 }
 
-// Boran'ýn Ana Arayüz Çizim Fonksiyonu
+// Boran'ï¿½n Ana Arayï¿½z ï¿½izim Fonksiyonu
 void Boran_draw_ui_panel(Node* selected_node, char* search_text_buffer, int screen_width, int screen_height) {
     // Panel boyutlarini dinamik ayarlayalim (Ekranin sag tarafinda 350 piksel genislikte)
     int panel_width = 350;
