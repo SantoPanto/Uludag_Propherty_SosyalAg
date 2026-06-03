@@ -59,29 +59,30 @@ void Boran_draw_ui_panel(Node* selected_node, char* search_text_buffer, int scre
         }
     }
 
-    // 3. YENİ VERİ GELDİ Mİ KONTROLÜ
+    // ui_integration.c içerisinde:
     if (ai_new_data_ready == 1) {
         ai_new_data_ready = 0; 
-        
+    
         char name[50];
         char *token = strtok(ai_result_buffer, "|");
         if (token != NULL) strcpy(name, token);
 
-        // Düğümü oluştur ve koordinatları ata
         static int ai_user_id_counter = 1000;
         Node* new_user = create_node(ai_user_id_counter++, USER);
-        
+    
         // Rastgele koordinat ataması
         new_user->x = (float)(rand() % 1200) - 600;
         new_user->y = (float)(rand() % 800) - 400;
 
         add_property_to_node(new_user, "Name", TYPE_STRING, name);
 
-        // Graf'a ekle
+        // DÜĞÜMÜ EKLE
         add_node_to_graph(my_graph, new_user); 
-        
-        printf("[+] AI Kullanicisi Grafa Eklendi: %s (x:%.1f, y:%.1f)\n", name, new_user->x, new_user->y);
-    }
+    
+        // NOT: add_node_to_graph fonksiyonunuzun graph->node_count değerini 
+        // güncellediğinden ve nodes dizisini genişlettiğinden emin olun.
+        printf("[+] AI Kullanicisi Grafa Eklendi: %s. Toplam dugum: %d\n", name, my_graph->node_count);
+    }   
 
     // 4. Düğüm Detaylarını Göster
     char detail_text[1024] = {0};
