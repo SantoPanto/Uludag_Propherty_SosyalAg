@@ -39,7 +39,12 @@ typedef struct {
     int property_count;     // Dizide o an kaç özellik olduğunu tutar
 
     // DİKKAT: next pointer'ı eklenmedi. 2. kişi kendi AdjListNode yapısında bunu yönetecek.
+
+    // --- YENİ EKLENEN: Görselleştirme için koordinatlar ---
+    float x;
+    float y;
 } Node;
+
 
 // --- ADIM 4: Kenar (Edge) Tipleri ---
 typedef enum {
