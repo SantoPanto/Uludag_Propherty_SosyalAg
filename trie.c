@@ -126,3 +126,33 @@ void Boran_freeTrie(TrieNode* root) {
     Boran_freeNodeList(root->matchingNodes); 
     free(root);                                
 }
+
+Node* Boran_findFirstNode(TrieNode* root, const char* word)
+{
+    if (root == NULL || word == NULL)
+        return NULL;
+
+    TrieNode* current = root;
+
+    for (int i = 0; word[i] != '\0'; i++)
+    {
+        int index = tolower((unsigned char)word[i]);
+
+        if (index < 0 ||
+            index >= ALPHABET_SIZE ||
+            current->children[index] == NULL)
+        {
+            return NULL;
+        }
+
+        current = current->children[index];
+    }
+
+    if (current->isEndOfWord &&
+        current->matchingNodes != NULL)
+    {
+        return current->matchingNodes->graphNode;
+    }
+
+    return NULL;
+}
