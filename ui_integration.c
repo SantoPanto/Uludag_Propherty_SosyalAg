@@ -177,7 +177,8 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
 
     GuiPanel((Rectangle){ (float)panel_x, 0, (float)panel_width, (float)screen_height }, "Property Graph Paneli");
 
-    DrawText("Isim / etkinlik ara (Enter):", panel_x + 16, 36, 14, DARKGRAY);
+    // YENİ: Yazı rengi DARKGRAY'den RAYWHITE'a çevrildi
+    DrawText("Isim / etkinlik ara (Enter):", panel_x + 16, 36, 14, RAYWHITE);
 
     static bool search_edit_mode = false;
 
@@ -227,7 +228,8 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
     static int bulk_add_count = 1;
     static bool spinner_edit_mode = false;
 
-    DrawText("Eklenecek Miktar:", panel_x + 16, start_y + 6, 14, DARKGRAY);
+    // YENİ: Yazı rengi RAYWHITE yapıldı ve arkadaşının !mouse_in_dropdown kontrolü eklendi
+    DrawText("Eklenecek Miktar:", panel_x + 16, start_y + 6, 14, RAYWHITE);
     if (GuiSpinner((Rectangle){ (float)panel_x + 140, start_y, 100, 28 }, "", &bulk_add_count, 1, 100, spinner_edit_mode) && !mouse_in_dropdown) {
         spinner_edit_mode = !spinner_edit_mode;
     }
@@ -365,30 +367,37 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
             i++;
         }
         line_buf[i] = '\0';
-        DrawText(line_buf, panel_x + 16, y, 14, BLACK);
+        
+        // YENİ: Düğüm detayları RAYWHITE (Beyaz) yapıldı
+        DrawText(line_buf, panel_x + 16, y, 14, RAYWHITE);
         y += 18;
 
         line += i;
         if (*line == '\n') line++;
     }
 
+    // --- GOOGLE TARZI AUTOCOMPLETE (AÇILIR KUTU) ÇİZİMİ (KARANLIK TEMA) ---
     if (dropdown_active) {
-        DrawRectangleRec(drop_rect, RAYWHITE);
-        DrawRectangleLinesEx(drop_rect, 1, DARKGRAY);
+        // Arka plan Koyu Gri/Lacivert tonuna çevrildi
+        DrawRectangleRec(drop_rect, (Color){ 30, 34, 40, 255 });
+        DrawRectangleLinesEx(drop_rect, 1, (Color){ 74, 83, 101, 255 }); // İnce çerçeve
 
         for (int i = 0; i < suggestion_count; i++) {
             Rectangle item_rect = { drop_rect.x, drop_rect.y + (i * 25), drop_rect.width, 25 };
-
             bool isHovering = CheckCollisionPointRec(mousePoint, item_rect);
 
             if (isHovering) {
-                DrawRectangleRec(item_rect, LIGHTGRAY);
+                // Üzerine gelince (hover) koyu temaya uygun şık gri
+                DrawRectangleRec(item_rect, (Color){ 68, 75, 87, 255 });
             }
 
             char label[128] = {0};
             node_get_display_label(suggestions[i], label, sizeof(label));
-            DrawText(label, item_rect.x + 8, item_rect.y + 6, 14, isHovering ? BLUE : DARKGRAY);
+            
+            // Yazı renkleri Beyaz, hover olunca Cyan (Mavi) yapıldı
+            DrawText(label, item_rect.x + 8, item_rect.y + 6, 14, isHovering ? (Color){ 64, 196, 255, 255 } : RAYWHITE);
 
+            // Arkadaşının MouseReleased mantığı korundu
             if (isHovering && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
                 strncpy(search_text_buffer, label, 63);
                 search_text_buffer[63] = '\0';
