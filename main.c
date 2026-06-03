@@ -1,114 +1,96 @@
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <time.h>
-    #include "graph_adj.h"
-    #include "hash_table.h"
-    #include "trie.h"
-    #include "data_generator.h"
-    #include "queries.h"
-    #include "ui_render.h"
-    #include "raylib.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include "graph_adj.h"
+#include "hash_table.h"
+#include "trie.h"
+#include "data_generator.h"
+#include "queries.h"
+#include "ui_render.h"
+#include "raylib.h"
 
-    Graph* my_graph = NULL;
-    // algorithms.c içerisindeki fonksiyonları burada tanıtıyoruz
-    void bfs_and_find_degrees(Graph* graph, int start_node_id);
-    void dfs(Graph* graph, int start_node_id);
-    void recommend_friends(Graph* graph, int target_user_id);
-    void dfs_full_network(Graph* graph);
-    void find_shortest_path(Graph* graph, int start_node_id, int target_node_id);
+Graph* my_graph = NULL;
+HashTable* g_ht = NULL;
+TrieNode* g_trie = NULL;
 
-    // Arayuz fonksiyonlarini derleyiciye manuel tanitiyoruz
-    void init_graphics_window();
-    void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node, char* search_text_buffer);
-    void close_graphics_window();
+void bfs_and_find_degrees(Graph* graph, int start_node_id);
+void dfs(Graph* graph, int start_node_id);
+void recommend_friends(Graph* graph, int target_user_id);
+void dfs_full_network(Graph* graph);
+void find_shortest_path(Graph* graph, int start_node_id, int target_node_id);
 
-    
+void init_graphics_window();
+void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node, char* search_text_buffer);
+void close_graphics_window();
 
-    int main() {
+int main(void) {
+    printf("=== Property Graph: Sosyal Ag Analiz Sistemi ===\n\n");
 
-        printf("=== FAZ 2: PERFORMANS VE DARBOGAZ TESTLERI ===\n\n");
+    int test_users = 300;
+    int test_photos = 10;
+    int test_events = 10;
+    int max_nodes = test_users + test_photos + test_events + 50;
 
-        // Test parametreleri (Ölçeklenebilirliği görmek için bu sayıları artırarak testler yapmalısınız)
-        int test_users = 10;
-        int test_photos = 10;
-        int test_events = 10;
-        int max_nodes = test_users + test_photos + test_events + 100;
+    srand((unsigned int)time(NULL));
 
-        my_graph = create_graph(max_nodes);
-        HashTable* ht = create_hash_table(max_nodes * 2);    // Çakışmaları azaltmak için kapasiteyi büyük tutuyoruz
-        TrieNode* trie_root = Boran_createTrieNode();
+    my_graph = create_graph(max_nodes);
+    g_ht = create_hash_table(max_nodes * 2);
+    g_trie = Boran_createTrieNode();
 
-        clock_t start, end;
-        double cpu_time_used;
+    clock_t start, end;
+    double cpu_time_used;
 
-        // --- TEST 1: VERİ YÜKLEME SÜRESİ ---
-        printf("[1] Veri Yukleme Testi Basliyor (%d Dugum)...\n", max_nodes);
-        start = clock();
-        init_synthetic_data(my_graph, ht, trie_root, test_users, test_photos, test_events);
-        end = clock();
-        cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-        printf("[-] Veri Yukleme Suresi: %f saniye\n\n", cpu_time_used);
+    printf("[1] Veri yukleme testi...\n");
+    start = clock();
+    init_synthetic_data(my_graph, g_ht, g_trie, test_users, test_photos, test_events);
+    end = clock();
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+    printf("[-] Yukleme suresi: %f sn\n\n", cpu_time_used);
 
-        // --- TEST 2: HASH TABLE O(1) ARAMA TESTİ ---
-        // İşlemler çok hızlı gerçekleşeceği için 10.000 kere arama yapıp toplam süreyi ölçüyoruz
-        printf("[2] Hash Table Stres Testi (10.000 Arama)...\n");
-        start = clock();
-        for(int i = 0; i < 10000; i++) {
-            int random_id = (rand() % test_users) + 1;
-            get_from_hash(ht, random_id);
-        }
-        end = clock();
-        cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-        printf("[-] Hash Table 10K Arama Suresi: %f saniye\n\n", cpu_time_used);
-
-        // --- TEST 3: TRIE PREFIX ARAMA TESTİ ---
-        printf("[3] Trie Otomatik Tamamlama Testi...\n");
-        start = clock();
-        Boran_autocomplete(trie_root, "User_100"); // "User_100", "User_1000" gibi eşleşmeleri bulacak
-        end = clock();
-        cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-        printf("[-] Trie Arama Suresi: %f saniye\n\n", cpu_time_used);
-
-        // --- TEST 4: GRAF TRAVERSAL (BFS - EN KISA YOL) TESTİ ---
-        printf("[4] Graf BFS (En Kisa Yol) Testi...\n");
-        int src_node = 1;
-        int dest_node = test_users / 2; // Ağın ortalarından bir kullanıcı seçelim
-        start = clock();
-        find_shortest_path(my_graph, src_node, dest_node);
-        end = clock();
-        cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-        printf("[-] BFS En Kisa Yol Bulma Suresi: %f saniye\n\n", cpu_time_used);
-
-    // --- EMINE: FAZ 2 SORGULARI ---
-        find_most_active_node(my_graph);
-        find_friends_events_photos(my_graph, 1);
-
-
-        // --- FAZ 3: ARAYÜZ (UI) BAŞLATMA ---
-        printf("\n[+] Arayuz baslatiliyor... Lutfen bekleyin.\n");
-
-
-        Node* selected_node = NULL;
-        char search_text_buffer[64] = "";
-
-        init_graphics_window();
-
-        // Pencere çarpıdan kapatılana kadar döner
-        while (!WindowShouldClose()) {
-            // BORAN: trie_root değişkeni arayüzü çizen fonksiyona gönderildi!
-            draw_graph_network(my_graph, trie_root, &selected_node, search_text_buffer);
-        }
-
-        close_graphics_window();
-        // ------------------------------------
-
-        // Belleği temizleme
-        free_graph(my_graph);
-        free_hash_table(ht);
-        Boran_freeTrie(trie_root);
-
-        printf("\n[+] Testler tamamlandi ve bellek temizlendi.\n");
-
-        return 0;
-
+    printf("[2] Hash table (10.000 arama)...\n");
+    start = clock();
+    for (int i = 0; i < 10000; i++) {
+        int random_id = (rand() % test_users) + 1;
+        get_from_hash(g_ht, random_id);
     }
+    end = clock();
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+    printf("[-] Hash 10K arama: %f sn\n\n", cpu_time_used);
+
+    printf("[3] Trie on ek arama ('ali')...\n");
+    start = clock();
+    Boran_autocomplete(g_trie, "ali");
+    end = clock();
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+    printf("[-] Trie arama: %f sn\n\n", cpu_time_used);
+
+    printf("[4] BFS en kisa yol (ID 1 -> %d)...\n", test_users / 2);
+    start = clock();
+    find_shortest_path(my_graph, 1, test_users / 2);
+    end = clock();
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+    printf("[-] BFS: %f sn\n\n", cpu_time_used);
+
+    find_most_active_node(my_graph);
+    find_friends_events_photos(my_graph, 1);
+
+    printf("\n[+] Arayuz baslatiliyor...\n");
+
+    Node* selected_node = NULL;
+    char search_text_buffer[64] = "";
+
+    init_graphics_window();
+
+    while (!WindowShouldClose()) {
+        draw_graph_network(my_graph, g_trie, &selected_node, search_text_buffer);
+    }
+
+    close_graphics_window();
+
+    free_graph(my_graph);
+    free_hash_table(g_ht);
+    Boran_freeTrie(g_trie);
+
+    printf("\n[+] Program tamamlandi.\n");
+    return 0;
+}

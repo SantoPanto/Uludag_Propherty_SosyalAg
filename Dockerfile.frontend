@@ -14,8 +14,7 @@ RUN git clone --depth 1 https://github.com/raysan5/raylib.git /tmp/raylib && \
     rm -rf /tmp/raylib
 
 # 3. Proje dosyalarınızı sanal masaüstüne kopyalıyoruz
-WORKDIR /config/workspace/Uludag_SosyalAg
-COPY . /config/workspace/Uludag_SosyalAg
+WORKDIR /config/workspace/Uludag_Propherty_SosyalAg
+COPY . /config/workspace/Uludag_Propherty_SosyalAg
 
-# 4. Konteyner inşa edilirken programı otomatik derliyoruz
-RUN make clean && make
+# Derleme islemi docker-compose icindeki "compiler" servisiyle calistirilir.

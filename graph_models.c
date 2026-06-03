@@ -97,3 +97,59 @@ void free_node(Node* node) {
     // 3. Son olarak ana düğümü sil
     free(node);
 }
+
+const char* node_type_to_string(NodeType type) {
+    switch (type) {
+        case USER: return "Kullanici";
+        case PHOTO: return "Fotograf";
+        case EVENT: return "Etkinlik";
+        default: return "Bilinmiyor";
+    }
+}
+
+const char* edge_type_to_string(EdgeType type) {
+    switch (type) {
+        case FRIEND: return "Arkadas";
+        case LIKES: return "Begeniyor";
+        case ATTENDS: return "Katiliyor";
+        case HAS_PHOTO: return "FotografIceriyor";
+        default: return "Iliski";
+    }
+}
+
+int node_get_string_property(const Node* node, const char* key, char* out, int out_len) {
+    if (node == NULL || key == NULL || out == NULL || out_len <= 0) return 0;
+    for (int i = 0; i < node->property_count; i++) {
+        if (node->properties[i].name != NULL &&
+            strcmp(node->properties[i].name, key) == 0 &&
+            node->properties[i].type == TYPE_STRING &&
+            node->properties[i].value.s_val != NULL) {
+            snprintf(out, (size_t)out_len, "%s", node->properties[i].value.s_val);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void node_get_display_label(const Node* node, char* out, int out_len) {
+    if (out == NULL || out_len <= 0) return;
+    if (node == NULL) {
+        snprintf(out, (size_t)out_len, "(secili degil)");
+        return;
+    }
+
+    char value[128];
+    if (node->type == USER && node_get_string_property(node, "Name", value, sizeof(value))) {
+        snprintf(out, (size_t)out_len, "%s", value);
+        return;
+    }
+    if (node->type == PHOTO && node_get_string_property(node, "Title", value, sizeof(value))) {
+        snprintf(out, (size_t)out_len, "%s", value);
+        return;
+    }
+    if (node->type == EVENT && node_get_string_property(node, "Title", value, sizeof(value))) {
+        snprintf(out, (size_t)out_len, "%s", value);
+        return;
+    }
+    snprintf(out, (size_t)out_len, "%s #%d", node_type_to_string(node->type), node->id);
+}
