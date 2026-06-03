@@ -23,6 +23,9 @@ typedef struct TrieNode {
 TrieNode* Boran_createTrieNode();
 void Boran_insertToTrie(TrieNode* root, const char* word, Node* gNode);
 void Boran_autocomplete(TrieNode* root, const char* prefix);
+
+Node* Boran_findFirstNode(TrieNode* root, const char* word);
+
 void Boran_freeTrie(TrieNode* root);
 
 #endif // TRIE_H
