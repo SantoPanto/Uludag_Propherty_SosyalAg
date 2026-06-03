@@ -17,9 +17,10 @@ extern HashTable* g_ht;
 extern TrieNode* g_trie;
 
 #ifndef DISABLE_AI
-extern char ai_result_buffer[256];
+extern char ai_result_buffer[8192]; // AI'dan gelen veriyi tutacak buffer (YENİ)
 extern int ai_is_fetching;
 extern int ai_new_data_ready;
+extern int ai_bulk_count; // YENİ
 void* fetch_ai_user_thread(void* arg);
 #endif
 
@@ -206,31 +207,54 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
     }
     start_y += 38;
 
-    // --- BUTON 1: TOPLU YEREL KULLANICI EKLE ---
-    if (GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "Toplu Rastgele Kullanici Ekle")) {
-        const char* random_names[] = {"Ahmet", "Ayse", "Fatma", "Mehmet", "Zeynep", "Ali", "Boran", "Salih"};
-        for (int i = 0; i < bulk_add_count; i++) {
-            Node* new_user = create_node(dynamic_id_counter++, USER);
-            new_user->x = (float)(rand() % 800) - 400.0f;
-            new_user->y = (float)(rand() % 800) - 400.0f;
+    // --- BUTON 1: TOPLU RASTGELE KULLANICI EKLE (AI DESTEKLI) ---
+    if (ai_is_fetching) {
+        GuiDisable();
+        GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "Yapay Zeka Uretiyor...");
+        GuiEnable();
+    } else {
+        if (GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "Toplu Rastgele Kullanici Ekle")) {
+            ai_bulk_count = bulk_add_count;
+            ai_is_fetching = 2; // 2: Toplu AI modu
+            pthread_t thread_id;
+            pthread_create(&thread_id, NULL, fetch_ai_user_thread, NULL);
+            pthread_detach(thread_id);
+        }
+    }
 
-            char name_buf[64];
-            sprintf(name_buf, "%s_%d", random_names[rand() % 8], new_user->id);
-            char* name_alloc = strdup(name_buf);
+    // Toplu AI verisi geldiğinde işleme
+    if (ai_new_data_ready == 2 && my_graph != NULL) {
+        ai_new_data_ready = 0; // Bayrağı indir
+        
+        if (strcmp(ai_result_buffer, "Hata") != 0) {
+            // Gelen uzun stringi '|' karakterinden bölerek teker teker işliyoruz
+            char* token = strtok(ai_result_buffer, "|");
+            while (token != NULL) {
+                char safe_name[128] = {0};
+                Boran_turkish_to_ascii(safe_name, token);
 
-            int age = 18 + rand() % 40;
+                Node* new_user = create_node(dynamic_id_counter++, USER);
+                new_user->x = (float)(rand() % 800) - 400.0f;
+                new_user->y = (float)(rand() % 800) - 400.0f;
 
-            add_property_to_node(new_user, "Name", TYPE_STRING, name_alloc);
-            add_property_to_node(new_user, "Age", TYPE_INTEGER, &age);
+                char* name_alloc = strdup(safe_name);
+                int age = 18 + rand() % 40;
 
-            add_node_to_graph(my_graph, new_user);
-            if (g_ht != NULL) insert_to_hash(g_ht, new_user);
-            if (g_trie != NULL) Boran_insertToTrie(g_trie, name_alloc, new_user);
+                add_property_to_node(new_user, "Name", TYPE_STRING, name_alloc);
+                add_property_to_node(new_user, "Age", TYPE_INTEGER, &age);
 
-            if (my_graph->node_count > 1) {
-                int random_target_idx = rand() % (my_graph->node_count - 1);
-                Node* target = my_graph->nodes[random_target_idx];
-                if (target->id != new_user->id) add_edge(my_graph, new_user->id, target->id, FRIEND, false);
+                add_node_to_graph(my_graph, new_user);
+                if (g_ht != NULL) insert_to_hash(g_ht, new_user);
+                if (g_trie != NULL) Boran_insertToTrie(g_trie, name_alloc, new_user);
+
+                if (my_graph->node_count > 1) {
+                    int random_target_idx = rand() % (my_graph->node_count - 1);
+                    Node* target = my_graph->nodes[random_target_idx];
+                    if (target->id != new_user->id) add_edge(my_graph, new_user->id, target->id, FRIEND, false);
+                }
+                
+                // Sıradaki isme geç
+                token = strtok(NULL, "|");
             }
         }
     }
