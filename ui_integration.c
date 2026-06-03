@@ -23,8 +23,40 @@ extern int ai_new_data_ready;
 void* fetch_ai_user_thread(void* arg);
 #endif
 
+// Dinamik olarak eklenen öğelerin ID'lerinin çakışmaması için sayaç
+static int dynamic_id_counter = 5000; 
+
 static const char* edge_type_label(EdgeType type) {
     return edge_type_to_string(type);
+}
+
+// BORAN: Türkçe UTF-8 karakterleri İngilizce ASCII karakterlere dönüştüren temizleyici fonksiyon
+void Boran_turkish_to_ascii(char *dest, const char *src) {
+    int d = 0;
+    for (int i = 0; src[i] != '\0'; i++) {
+        unsigned char c = src[i];
+        unsigned char next = src[i+1];
+
+        if (c == 0xC3) {
+            if (next == 0xA7) { dest[d++] = 'c'; i++; continue; } // ç
+            if (next == 0x87) { dest[d++] = 'C'; i++; continue; } // Ç
+            if (next == 0xB6) { dest[d++] = 'o'; i++; continue; } // ö
+            if (next == 0x96) { dest[d++] = 'O'; i++; continue; } // Ö
+            if (next == 0xBC) { dest[d++] = 'u'; i++; continue; } // ü
+            if (next == 0x9C) { dest[d++] = 'U'; i++; continue; } // Ü
+        } else if (c == 0xC4) {
+            if (next == 0x9F) { dest[d++] = 'g'; i++; continue; } // ğ
+            if (next == 0x9E) { dest[d++] = 'G'; i++; continue; } // Ğ
+            if (next == 0xB1) { dest[d++] = 'i'; i++; continue; } // ı
+            if (next == 0xB0) { dest[d++] = 'I'; i++; continue; } // İ
+        } else if (c == 0xC5) {
+            if (next == 0x9F) { dest[d++] = 's'; i++; continue; } // ş
+            if (next == 0x9E) { dest[d++] = 'S'; i++; continue; } // Ş
+        }
+
+        dest[d++] = src[i];
+    }
+    dest[d] = '\0';
 }
 
 void Boran_format_side_panel_text(Graph* graph, Node* node, char* buffer, int max_len) {
@@ -113,6 +145,7 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
         search_edit_mode = !search_edit_mode;
     }
 
+    // --- BUTON 1: AI KULLANICI EKLE ---
 #ifndef DISABLE_AI
     if (ai_is_fetching) {
         GuiDisable();
@@ -121,7 +154,7 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
         GuiEnable();
     } else {
         if (GuiButton((Rectangle){ (float)panel_x + 16, 96, (float)panel_width - 32, 28 },
-                      "AI ile yeni kullanici")) {
+                      "Yapay Zeka ile Kullanici Ekle")) {
             ai_is_fetching = 1;
             pthread_t thread_id;
             pthread_create(&thread_id, NULL, fetch_ai_user_thread, NULL);
@@ -132,32 +165,101 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
     if (ai_new_data_ready == 1 && my_graph != NULL) {
         ai_new_data_ready = 0;
 
-        char name[50] = "Yeni Kullanici";
+        char raw_name[128] = "Yeni Kullanici";
+        char safe_name[128] = {0};
+
         char* token = strtok(ai_result_buffer, "|");
         if (token != NULL) {
-            strncpy(name, token, sizeof(name) - 1);
-            name[sizeof(name) - 1] = '\0';
+            strncpy(raw_name, token, sizeof(raw_name) - 1);
+            raw_name[sizeof(raw_name) - 1] = '\0';
         }
 
-        static int ai_user_id_counter = 5000;
-        Node* new_user = create_node(ai_user_id_counter++, USER);
+        // Tükçe karakterleri temizle
+        Boran_turkish_to_ascii(safe_name, raw_name);
+
+        Node* new_user = create_node(dynamic_id_counter++, USER);
         new_user->x = (float)(rand() % 400) - 200.0f;
         new_user->y = (float)(rand() % 400) - 200.0f;
 
-        add_property_to_node(new_user, "Name", TYPE_STRING, name);
+        char* name_alloc = strdup(safe_name); 
+        add_property_to_node(new_user, "Name", TYPE_STRING, name_alloc);
         add_node_to_graph(my_graph, new_user);
+        
         if (g_ht != NULL) insert_to_hash(g_ht, new_user);
-        if (g_trie != NULL) Boran_insertToTrie(g_trie, name, new_user);
-        printf("[+] AI kullanicisi eklendi: %s\n", name);
+        if (g_trie != NULL) Boran_insertToTrie(g_trie, name_alloc, new_user);
+
+        // BORAN: Havada uçmasın diye haritadan rastgele 2 kişiyi ona arkadaş yapıyoruz
+        if (my_graph->node_count > 1) {
+            for (int k = 0; k < 2; k++) {
+                int random_target_idx = rand() % (my_graph->node_count - 1);
+                Node* target = my_graph->nodes[random_target_idx];
+                if (target->id != new_user->id) {
+                    add_edge(my_graph, new_user->id, target->id, FRIEND, false);
+                }
+            }
+        }
     }
 #endif
+
+    // --- BUTON 2: FOTOGRAF EKLE ---
+    if (GuiButton((Rectangle){ (float)panel_x + 16, 134, (float)panel_width - 32, 28 },
+                  "Yeni Fotograf Ekle")) {
+        Node* new_photo = create_node(dynamic_id_counter++, PHOTO);
+        new_photo->x = (float)(rand() % 400) - 200.0f;
+        new_photo->y = (float)(rand() % 400) - 200.0f;
+
+        char* desc_alloc = (char*)malloc(64 * sizeof(char));
+        sprintf(desc_alloc, "Photo_Desc_%d", new_photo->id);
+        
+        add_property_to_node(new_photo, "Description", TYPE_STRING, desc_alloc);
+        add_node_to_graph(my_graph, new_photo);
+        if (g_ht != NULL) insert_to_hash(g_ht, new_photo);
+        if (g_trie != NULL) Boran_insertToTrie(g_trie, desc_alloc, new_photo);
+
+        // BORAN: Haritada biri varsa rastgele biri bu fotoğrafı beğensin (LIKES)
+        if (my_graph->node_count > 1) {
+            int random_target_idx = rand() % (my_graph->node_count - 1);
+            Node* target = my_graph->nodes[random_target_idx];
+            if (target->id != new_photo->id) {
+                add_edge(my_graph, target->id, new_photo->id, LIKES, true);
+            }
+        }
+    }
+
+    // --- BUTON 3: ETKİNLİK EKLE ---
+    if (GuiButton((Rectangle){ (float)panel_x + 16, 172, (float)panel_width - 32, 28 },
+                  "Yeni Etkinlik Ekle")) {
+        Node* new_event = create_node(dynamic_id_counter++, EVENT);
+        new_event->x = (float)(rand() % 400) - 200.0f;
+        new_event->y = (float)(rand() % 400) - 200.0f;
+
+        char* title_alloc = (char*)malloc(64 * sizeof(char));
+        sprintf(title_alloc, "Event_Title_%d", new_event->id);
+        
+        add_property_to_node(new_event, "Title", TYPE_STRING, title_alloc);
+        add_node_to_graph(my_graph, new_event);
+        if (g_ht != NULL) insert_to_hash(g_ht, new_event);
+        if (g_trie != NULL) Boran_insertToTrie(g_trie, title_alloc, new_event);
+
+        // BORAN: Haritada biri varsa rastgele 2 kişi bu etkinliğe katılsın (ATTENDS)
+        if (my_graph->node_count > 1) {
+            for (int k = 0; k < 2; k++) {
+                int random_target_idx = rand() % (my_graph->node_count - 1);
+                Node* target = my_graph->nodes[random_target_idx];
+                if (target->id != new_event->id) {
+                    add_edge(my_graph, target->id, new_event->id, ATTENDS, true);
+                }
+            }
+        }
+    }
 
     char detail_text[2048] = {0};
     Boran_format_side_panel_text(graph, selected_node, detail_text, sizeof(detail_text));
 
-    int y = 96;
+    int y = 220; 
     const char* line = detail_text;
     char line_buf[256];
+    
     while (*line != '\0' && y < screen_height - 20) {
         int i = 0;
         while (line[i] != '\0' && line[i] != '\n' && i < 255) {
@@ -167,8 +269,9 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
         line_buf[i] = '\0';
         DrawText(line_buf, panel_x + 16, y, 14, BLACK);
         y += 18;
-        if (line[i] == '\n') line++;
-        else if (line[i] == '\0') break;
-        else line++;
+        
+        line += i; 
+        
+        if (*line == '\n') line++;
     }
 }
