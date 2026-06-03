@@ -14,6 +14,8 @@ typedef struct AdjListNode {
 typedef struct {
     Node** nodes;              // Düğümleri tutan dinamik dizi
     AdjListNode** adjLists;    // Her düğümün kenar listesinin başı (head)
+    int* id_to_index;          // ID -> nodes[] indeksi (O(1) arama)
+    int id_map_size;           // id_to_index dizisinin boyutu
     int node_count;            // Mevcut düğüm sayısı
     int capacity;              // Grafın maksimum kapasitesi
 } Graph;

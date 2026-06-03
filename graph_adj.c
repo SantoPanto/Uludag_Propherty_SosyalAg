@@ -14,26 +14,43 @@ Graph* create_graph(int capacity) {
     graph->nodes = (Node**)malloc(capacity * sizeof(Node*));
     graph->adjLists = (AdjListNode**)malloc(capacity * sizeof(AdjListNode*));
 
+    graph->id_map_size = capacity + 1;
+    graph->id_to_index = (int*)malloc((size_t)graph->id_map_size * sizeof(int));
+    if (!graph->nodes || !graph->adjLists || !graph->id_to_index) {
+        free(graph->nodes);
+        free(graph->adjLists);
+        free(graph->id_to_index);
+        free(graph);
+        return NULL;
+    }
+
     for (int i = 0; i < capacity; i++) {
         graph->adjLists[i] = NULL;
+    }
+    for (int i = 0; i < graph->id_map_size; i++) {
+        graph->id_to_index[i] = -1;
     }
     return graph;
 }
 
 // Yeni bir düğümü graf listesine ekler
 void add_node_to_graph(Graph* graph, Node* node) {
-    if (graph->node_count < graph->capacity) {
-        graph->nodes[graph->node_count] = node;
-        graph->node_count++;
-    }
+    if (graph == NULL || node == NULL) return;
+    if (graph->node_count >= graph->capacity) return;
+    if (node->id < 0 || node->id >= graph->id_map_size) return;
+
+    int index = graph->node_count;
+    graph->nodes[index] = node;
+    graph->id_to_index[node->id] = index;
+    graph->node_count++;
 }
 
-// Yardımcı Fonksiyon: ID'ye göre düğümün dizideki indeksini bulur
+// ID -> nodes[] indeksi (O(1))
 int find_node_index(Graph* graph, int id) {
-    for (int i = 0; i < graph->node_count; i++) {
-        if (graph->nodes[i]->id == id) return i;
-    }
-    return -1;
+    if (graph == NULL || graph->id_to_index == NULL) return -1;
+    if (id < 0 || id >= graph->id_map_size) return -1;
+
+    return graph->id_to_index[id];
 }
 
 // İki düğüm arasında bağ (Kenar) kurar
@@ -115,5 +132,6 @@ void free_graph(Graph* graph) {
     }
     free(graph->nodes);
     free(graph->adjLists);
+    free(graph->id_to_index);
     free(graph);
 }

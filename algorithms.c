@@ -151,7 +151,7 @@ void recommend_friends(Graph* graph, int target_user_id) {
     // 3. Sonuçları listele (En az 1 ortak arkadaşı olanlar)
     printf("\n--- Kullanici %d Icin Arkadas Onerileri ---\n", target_user_id);
     bool suggestion_made = false;
-    for (int i = 0; i < graph->capacity; i++) {
+    for (int i = 0; i < graph->node_count; i++) {
         if (mutual_friend_scores[i] > 0) {
             printf("[+] Oneri: Kullanici ID %d | Ortak Arkadas Sayisi: %d\n", graph->nodes[i]->id, mutual_friend_scores[i]);
             suggestion_made = true;
