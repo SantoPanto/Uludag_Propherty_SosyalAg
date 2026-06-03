@@ -3,7 +3,14 @@
 #include <string.h>
 #include "graph_adj.h"
 
-//Graf oluşturma fonksiyonu
+// ID'ye göre düğüm indeksini bulan yardımcı fonksiyon
+int find_node_index(Graph* graph, int id) {
+    if (graph == NULL || graph->id_to_index == NULL) return -1;
+    if (id < 0 || id >= graph->id_map_size) return -1;
+    return graph->id_to_index[id];
+}
+
+// Graf oluşturma fonksiyonu
 Graph* create_graph(int capacity) {
     Graph* graph = (Graph*)malloc(sizeof(Graph));
     if (!graph) return NULL;
@@ -36,8 +43,19 @@ Graph* create_graph(int capacity) {
 // Yeni bir düğümü graf listesine ekler
 void add_node_to_graph(Graph* graph, Node* node) {
     if (graph == NULL || node == NULL) return;
-    if (graph->node_count >= graph->capacity) return;
-    if (node->id < 0 || node->id >= graph->id_map_size) return;
+    
+    // Kapasite kontrolü ve genişletme
+    if (graph->node_count >= graph->capacity) {
+        int new_capacity = graph->capacity * 2;
+        graph->nodes = (Node**)realloc(graph->nodes, new_capacity * sizeof(Node*));
+        graph->adjLists = (AdjListNode**)realloc(graph->adjLists, new_capacity * sizeof(AdjListNode*));
+        
+        // Yeni ayrılan adjLists alanlarını NULL ile başlat
+        for (int i = graph->capacity; i < new_capacity; i++) {
+            graph->adjLists[i] = NULL;
+        }
+        graph->capacity = new_capacity;
+    }
 
     int index = graph->node_count;
     graph->nodes[index] = node;
@@ -45,41 +63,32 @@ void add_node_to_graph(Graph* graph, Node* node) {
     graph->node_count++;
 }
 
-// ID -> nodes[] indeksi (O(1))
-int find_node_index(Graph* graph, int id) {
-    if (graph == NULL || graph->id_to_index == NULL) return -1;
-    if (id < 0 || id >= graph->id_map_size) return -1;
-
-    return graph->id_to_index[id];
-}
-
 // İki düğüm arasında bağ (Kenar) kurar
 void add_edge(Graph* graph, int src_id, int dest_id, EdgeType type, bool is_directed) {
     int src_idx = find_node_index(graph, src_id);
     if (src_idx == -1) return;
 
-    // Yeni bir bağlı liste düğümü oluştur (malloc)
+    // Yeni bir bağlı liste düğümü oluştur
     AdjListNode* newNode = (AdjListNode*)malloc(sizeof(AdjListNode));
     newNode->edge = (Edge*)malloc(sizeof(Edge));
 
-    // Kenar verilerini arkadaşının struct yapısına göre doldur
     newNode->edge->source_id = src_id;
     newNode->edge->target_id = dest_id;
     newNode->edge->type = type;
     newNode->edge->properties = NULL;
     newNode->edge->property_count = 0;
 
-    // BAĞLI LİSTE MANTIRI: Yeni elemanı listenin başına ekle (Pointer manipülasyonu)
+    // BAĞLI LİSTE MANTIĞI: Yeni elemanı listenin başına ekle
     newNode->next = graph->adjLists[src_idx];
     graph->adjLists[src_idx] = newNode;
 
-    // Eğer yönsüzse (FRIEND gibi), tersi yönde de bir kenar ekle
+    // Eğer yönsüzse, tersi yönde de bir kenar ekle
     if (!is_directed) {
         add_edge(graph, dest_id, src_id, type, true);
     }
 }
 
-// Kenara dinamik özellik ekleme (Arkadaşının mantığıyla uyumlu)
+// Kenara dinamik özellik ekleme
 void add_property_to_edge(Edge* edge, const char* key, DataType type, void* value) {
     edge->properties = (Property*)realloc(edge->properties, (edge->property_count + 1) * sizeof(Property));
     Property* new_prop = &edge->properties[edge->property_count];
@@ -107,7 +116,7 @@ void add_property_to_edge(Edge* edge, const char* key, DataType type, void* valu
     edge->property_count++;
 }
 
-// Tüm grafı ve bağlı listeleri temizler (Bellek Yönetimi)
+// Tüm grafı ve bağlı listeleri temizler
 void free_graph(Graph* graph) {
     if (!graph) return;
     for (int i = 0; i < graph->node_count; i++) {
@@ -116,7 +125,7 @@ void free_graph(Graph* graph) {
             AdjListNode* temp = current;
             current = current->next;
 
-            // Kenar içindeki dinamik özellikleri temizle (ok -> ile değiştirildi)
+            // Kenar içindeki dinamik özellikleri temizle
             for(int j=0; j < temp->edge->property_count; j++) {
                 free(temp->edge->properties[j].name);
                 if(temp->edge->properties[j].type == TYPE_STRING) {
@@ -124,11 +133,9 @@ void free_graph(Graph* graph) {
                 }
             }
             free(temp->edge->properties);
-            free(temp->edge); // YENİ: Edge pointer olduğu için onu da siliyoruz
+            free(temp->edge);
             free(temp);
         }
-        // 1. kişinin free_node fonksiyonunu kullanarak düğümü temizle
-       // free_node(graph->nodes[i]);
     }
     free(graph->nodes);
     free(graph->adjLists);

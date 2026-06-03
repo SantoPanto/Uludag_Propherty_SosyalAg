@@ -8,14 +8,18 @@
 #include "ui_integration.h"
 #include "trie.h"
 
-// Dışarıdan erişilen kamera değişkeni
-extern Camera2D camera;
-// Sadece bir dosyada şu satır bulunmalı (extern olmadan):
 Camera2D camera = { 0 };
 
 // Pencere ve grafik başlatma işlemleri
 void init_graphics_window() {
     InitWindow(1280, 720, "Sosyal Ag Analiz Araci");
+    
+    // KAMERAYI BAŞLATIN
+    camera.target = (Vector2){ 0.0f, 0.0f }; // Merkeze bak
+    camera.offset = (Vector2){ 640.0f, 360.0f }; // Ekranın ortasına offsetle
+    camera.rotation = 0.0f;
+    camera.zoom = 1.0f; // Zoom 0 olmamalı!
+    
     SetTargetFPS(60);
 }
 
@@ -62,30 +66,19 @@ void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node,
                 adj = adj->next;
             }
         }
+    EndMode2D(); // Dünya koordinatları bitti
 
-        // Düğümlerin çizilmesi
-        for (int i = 0; i < graph->node_count; i++) {
-            Node* n = graph->nodes[i];
-            bool is_selected = (*selected_node != NULL && (*selected_node)->id == n->id);   
-            DrawCircle((int)n->x, (int)n->y, is_selected ? 15.0f : 10.0f, is_selected ? RED : BLUE);
-        }
-
-        // Tıklama ile düğüm seçimi
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-            Vector2 mouse_world_pos = GetScreenToWorld2D(GetMousePosition(), camera);
-            for (int i = 0; i < graph->node_count; i++) {
-                if (CheckCollisionPointCircle(mouse_world_pos, (Vector2){graph->nodes[i]->x, graph->nodes[i]->y}, 12.0f)) {
-                    // Artık pointer'ın pointer'ını kullanarak asıl değişkeni güncelliyoruz
-                    *selected_node = graph->nodes[i];
-                    break;
-                }
-            }
-        }
-    EndMode2D();
+    // --- DÜĞÜMLERİ EKRAN UZAYINDA (SCREEN SPACE) ÇİZ ---
+    for (int i = 0; i < graph->node_count; i++) {
+        Node* n = graph->nodes[i];
+        // BeginMode2D'nin dışına çıkarak koordinatlara offset (640, 360) ekledik
+        bool is_selected = (*selected_node != NULL && (*selected_node)->id == n->id);
+        DrawCircle((int)n->x + 640, (int)n->y + 360, is_selected ? 15.0f : 10.0f, is_selected ? RED : BLUE);
+    }
 
     // --- 3. ARAYÜZ VE MANTIKSAL İŞLEMLER ---
     
-    // UI panelini çiz (selected_node artık bir pointer olduğu için doğrudan geçiyoruz)
+    // UI panelini çiz
     Boran_draw_ui_panel(*selected_node, search_text_buffer, GetScreenWidth(), GetScreenHeight());
 
     // Arama Mantığı (Trie üzerinden düğüm bulma)

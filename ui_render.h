@@ -6,6 +6,8 @@
 #include "ui_integration.h" 
 #include "trie.h"
 
+extern Camera2D camera;
+
 // Boran: Ana ekranda sag tarafa UI panelini ve arama cubugunu cizer
 void Boran_draw_ui_panel(Node* selected_node, char* search_text_buffer, int screen_width, int screen_height);
 
