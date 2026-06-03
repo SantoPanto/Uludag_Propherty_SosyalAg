@@ -145,58 +145,6 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
 
     int start_y = 96;
 
-    // --- YAPAY ZEKA BUTONU (TEKLI) ---
-#ifndef DISABLE_AI
-    if (ai_is_fetching) {
-        GuiDisable();
-        GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "AI kullanici uretiliyor...");
-        GuiEnable();
-    } else {
-        if (GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "Yapay Zeka ile Kullanici Ekle")) {
-            ai_is_fetching = 1;
-            pthread_t thread_id;
-            pthread_create(&thread_id, NULL, fetch_ai_user_thread, NULL);
-            pthread_detach(thread_id);
-        }
-    }
-
-    // AI verisi geldiğinde işleme
-    if (ai_new_data_ready == 1 && my_graph != NULL) {
-        ai_new_data_ready = 0;
-        char raw_name[128] = "Yeni Kullanici";
-        char safe_name[128] = {0};
-        char* token = strtok(ai_result_buffer, "|");
-        if (token != NULL) {
-            strncpy(raw_name, token, sizeof(raw_name) - 1);
-            raw_name[sizeof(raw_name) - 1] = '\0';
-        }
-        Boran_turkish_to_ascii(safe_name, raw_name);
-
-        Node* new_user = create_node(dynamic_id_counter++, USER);
-        new_user->x = (float)(rand() % 400) - 200.0f;
-        new_user->y = (float)(rand() % 400) - 200.0f;
-
-        char* name_alloc = strdup(safe_name);
-        int age = 18 + rand() % 40; // Eksik özellik tamamlandı (Yaş)
-
-        add_property_to_node(new_user, "Name", TYPE_STRING, name_alloc);
-        add_property_to_node(new_user, "Age", TYPE_INTEGER, &age);
-
-        add_node_to_graph(my_graph, new_user);
-        if (g_ht != NULL) insert_to_hash(g_ht, new_user);
-        if (g_trie != NULL) Boran_insertToTrie(g_trie, name_alloc, new_user);
-
-        if (my_graph->node_count > 1) {
-            for (int k = 0; k < 2; k++) {
-                int random_target_idx = rand() % (my_graph->node_count - 1);
-                Node* target = my_graph->nodes[random_target_idx];
-                if (target->id != new_user->id) add_edge(my_graph, new_user->id, target->id, FRIEND, false);
-            }
-        }
-    }
-    start_y += 38;
-#endif
-
     // --- COKLU EKLEME MIKTAR AYARI (SPINNER) ---
     static int bulk_add_count = 1;
     static bool spinner_edit_mode = false;
@@ -207,120 +155,113 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
     }
     start_y += 38;
 
-    // --- BUTON 1: TOPLU RASTGELE KULLANICI EKLE (AI DESTEKLI) ---
+    // --- BUTONLAR (SADECE YAPAY ZEKA) ---
+#ifndef DISABLE_AI
     if (ai_is_fetching) {
         GuiDisable();
         GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "Yapay Zeka Uretiyor...");
+        GuiButton((Rectangle){ (float)panel_x + 16, start_y + 38, (float)panel_width - 32, 28 }, "Yapay Zeka Uretiyor...");
+        GuiButton((Rectangle){ (float)panel_x + 16, start_y + 76, (float)panel_width - 32, 28 }, "Yapay Zeka Uretiyor...");
         GuiEnable();
+        start_y += 114;
     } else {
-        if (GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "Toplu Rastgele Kullanici Ekle")) {
-            ai_bulk_count = bulk_add_count;
-            ai_is_fetching = 2; // 2: Toplu AI modu
-            pthread_t thread_id;
-            pthread_create(&thread_id, NULL, fetch_ai_user_thread, NULL);
-            pthread_detach(thread_id);
+        if (GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "Yapay Zeka: Kullanici Ekle")) {
+            ai_bulk_count = bulk_add_count; ai_is_fetching = 2;
+            pthread_t t; pthread_create(&t, NULL, fetch_ai_user_thread, NULL); pthread_detach(t);
         }
+        start_y += 38;
+        if (GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "Yapay Zeka: Fotograf Ekle")) {
+            ai_bulk_count = bulk_add_count; ai_is_fetching = 3;
+            pthread_t t; pthread_create(&t, NULL, fetch_ai_user_thread, NULL); pthread_detach(t);
+        }
+        start_y += 38;
+        if (GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "Yapay Zeka: Etkinlik Ekle")) {
+            ai_bulk_count = bulk_add_count; ai_is_fetching = 4;
+            pthread_t t; pthread_create(&t, NULL, fetch_ai_user_thread, NULL); pthread_detach(t);
+        }
+        start_y += 38;
     }
 
-    // Toplu AI verisi geldiğinde işleme
-    if (ai_new_data_ready == 2 && my_graph != NULL) {
-        ai_new_data_ready = 0; // Bayrağı indir
+    // --- YAPAY ZEKA VERI ISLEME ---
+    if (ai_new_data_ready > 0 && my_graph != NULL) {
+        int mode = ai_new_data_ready; // 2: Kullanici, 3: Fotograf, 4: Etkinlik
+        ai_new_data_ready = 0;
         
         if (strcmp(ai_result_buffer, "Hata") != 0) {
-            // Gelen uzun stringi '|' karakterinden bölerek teker teker işliyoruz
             char* token = strtok(ai_result_buffer, "|");
             while (token != NULL) {
-                char safe_name[128] = {0};
-                Boran_turkish_to_ascii(safe_name, token);
-
-                Node* new_user = create_node(dynamic_id_counter++, USER);
-                new_user->x = (float)(rand() % 800) - 400.0f;
-                new_user->y = (float)(rand() % 800) - 400.0f;
-
-                char* name_alloc = strdup(safe_name);
-                int age = 18 + rand() % 40;
-
-                add_property_to_node(new_user, "Name", TYPE_STRING, name_alloc);
-                add_property_to_node(new_user, "Age", TYPE_INTEGER, &age);
-
-                add_node_to_graph(my_graph, new_user);
-                if (g_ht != NULL) insert_to_hash(g_ht, new_user);
-                if (g_trie != NULL) Boran_insertToTrie(g_trie, name_alloc, new_user);
-
-                if (my_graph->node_count > 1) {
-                    int random_target_idx = rand() % (my_graph->node_count - 1);
-                    Node* target = my_graph->nodes[random_target_idx];
-                    if (target->id != new_user->id) add_edge(my_graph, new_user->id, target->id, FRIEND, false);
-                }
+                char safe_str[128] = {0};
+                Boran_turkish_to_ascii(safe_str, token);
                 
-                // Sıradaki isme geç
+                Node* new_node = NULL;
+                
+                if (mode == 2) { // KULLANICI
+                    new_node = create_node(dynamic_id_counter++, USER);
+                    new_node->x = (float)(rand() % 800) - 400.0f;
+                    new_node->y = (float)(rand() % 800) - 400.0f;
+                    int age = 18 + rand() % 40;
+                    add_property_to_node(new_node, "Name", TYPE_STRING, strdup(safe_str));
+                    add_property_to_node(new_node, "Age", TYPE_INTEGER, &age);
+                    
+                    add_node_to_graph(my_graph, new_node);
+                    if (g_ht != NULL) insert_to_hash(g_ht, new_node);
+                    if (g_trie != NULL) Boran_insertToTrie(g_trie, strdup(safe_str), new_node);
+                    
+                    if (my_graph->node_count > 1) {
+                        int random_target_idx = rand() % (my_graph->node_count - 1);
+                        Node* target = my_graph->nodes[random_target_idx];
+                        if (target->id != new_node->id) add_edge(my_graph, new_node->id, target->id, FRIEND, false);
+                    }
+                } 
+                else if (mode == 3) { // FOTOGRAF
+                    new_node = create_node(dynamic_id_counter++, PHOTO);
+                    new_node->x = (float)(rand() % 800) - 400.0f;
+                    new_node->y = (float)(rand() % 800) - 400.0f;
+                    int size_mb = 2 + rand() % 10;
+                    
+                    // ÇÖZÜM BURADA: graph_models.c'nin ismini ekrana basabilmesi için "Title" ekliyoruz.
+                    // Yan panelde ekstra detay olarak görünmesi için "Description" da ekliyoruz.
+                    add_property_to_node(new_node, "Title", TYPE_STRING, safe_str);
+                    add_property_to_node(new_node, "Description", TYPE_STRING, safe_str);
+                    add_property_to_node(new_node, "Resolution", TYPE_STRING, "1920x1080");
+                    add_property_to_node(new_node, "Size(MB)", TYPE_INTEGER, &size_mb);
+                    
+                    add_node_to_graph(my_graph, new_node);
+                    if (g_ht != NULL) insert_to_hash(g_ht, new_node);
+                    if (g_trie != NULL) Boran_insertToTrie(g_trie, safe_str, new_node);
+                    
+                    if (my_graph->node_count > 1) {
+                        int random_target_idx = rand() % (my_graph->node_count - 1);
+                        Node* target = my_graph->nodes[random_target_idx];
+                        if (target->id != new_node->id) add_edge(my_graph, target->id, new_node->id, LIKES, true);
+                    }
+                }
+                else if (mode == 4) { // ETKINLIK
+                    new_node = create_node(dynamic_id_counter++, EVENT);
+                    new_node->x = (float)(rand() % 800) - 400.0f;
+                    new_node->y = (float)(rand() % 800) - 400.0f;
+                    int capacity = 50 + rand() % 500;
+                    add_property_to_node(new_node, "Title", TYPE_STRING, strdup(safe_str));
+                    add_property_to_node(new_node, "Capacity", TYPE_INTEGER, &capacity);
+                    
+                    add_node_to_graph(my_graph, new_node);
+                    if (g_ht != NULL) insert_to_hash(g_ht, new_node);
+                    if (g_trie != NULL) Boran_insertToTrie(g_trie, strdup(safe_str), new_node);
+                    
+                    if (my_graph->node_count > 1) {
+                        for (int k = 0; k < 2; k++) {
+                            int random_target_idx = rand() % (my_graph->node_count - 1);
+                            Node* target = my_graph->nodes[random_target_idx];
+                            if (target->id != new_node->id) add_edge(my_graph, target->id, new_node->id, ATTENDS, true);
+                        }
+                    }
+                }
+
                 token = strtok(NULL, "|");
             }
         }
     }
-    start_y += 38;
-
-    // --- BUTON 2: TOPLU FOTOGRAF EKLE ---
-    if (GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "Toplu Fotograf Ekle")) {
-        for (int i = 0; i < bulk_add_count; i++) {
-            Node* new_photo = create_node(dynamic_id_counter++, PHOTO);
-            new_photo->x = (float)(rand() % 800) - 400.0f;
-            new_photo->y = (float)(rand() % 800) - 400.0f;
-
-            char desc_buf[64];
-            sprintf(desc_buf, "Tatil_Foto_%d", new_photo->id);
-            char* desc_alloc = strdup(desc_buf);
-
-            char* res_alloc = strdup("1920x1080");
-            int size_mb = 2 + rand() % 10;
-
-            add_property_to_node(new_photo, "Description", TYPE_STRING, desc_alloc);
-            add_property_to_node(new_photo, "Resolution", TYPE_STRING, res_alloc);
-            add_property_to_node(new_photo, "Size(MB)", TYPE_INTEGER, &size_mb);
-
-            add_node_to_graph(my_graph, new_photo);
-            if (g_ht != NULL) insert_to_hash(g_ht, new_photo);
-            if (g_trie != NULL) Boran_insertToTrie(g_trie, desc_alloc, new_photo);
-
-            if (my_graph->node_count > 1) {
-                int random_target_idx = rand() % (my_graph->node_count - 1);
-                Node* target = my_graph->nodes[random_target_idx];
-                if (target->id != new_photo->id) add_edge(my_graph, target->id, new_photo->id, LIKES, true);
-            }
-        }
-    }
-    start_y += 38;
-
-    // --- BUTON 3: TOPLU ETKİNLİK EKLE ---
-    if (GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "Toplu Etkinlik Ekle")) {
-        for (int i = 0; i < bulk_add_count; i++) {
-            Node* new_event = create_node(dynamic_id_counter++, EVENT);
-            new_event->x = (float)(rand() % 800) - 400.0f;
-            new_event->y = (float)(rand() % 800) - 400.0f;
-
-            char title_buf[64];
-            sprintf(title_buf, "Konser_%d", new_event->id);
-            char* title_alloc = strdup(title_buf);
-
-            int capacity = 50 + rand() % 500;
-
-            add_property_to_node(new_event, "Title", TYPE_STRING, title_alloc);
-            add_property_to_node(new_event, "Capacity", TYPE_INTEGER, &capacity);
-
-            add_node_to_graph(my_graph, new_event);
-            if (g_ht != NULL) insert_to_hash(g_ht, new_event);
-            if (g_trie != NULL) Boran_insertToTrie(g_trie, title_alloc, new_event);
-
-            if (my_graph->node_count > 1) {
-                for (int k = 0; k < 2; k++) {
-                    int random_target_idx = rand() % (my_graph->node_count - 1);
-                    Node* target = my_graph->nodes[random_target_idx];
-                    if (target->id != new_event->id) add_edge(my_graph, target->id, new_event->id, ATTENDS, true);
-                }
-            }
-        }
-    }
-    start_y += 40;
+#endif
 
     // --- SECILEN DUGUMUN DETAYLARINI BASTIR ---
     char detail_text[2048] = {0};

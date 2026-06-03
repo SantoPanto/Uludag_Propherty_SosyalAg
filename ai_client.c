@@ -16,6 +16,8 @@ size_t write_callback(void *ptr, size_t size, size_t nmemb, char *data) {
     return realsize;
 }
 
+// ... (Üst kısımlar aynı kalacak)
+
 void* fetch_ai_user_thread(void* arg) {
     (void)arg; 
     
@@ -25,22 +27,26 @@ void* fetch_ai_user_thread(void* arg) {
     curl = curl_easy_init();
     if(curl) {
         char url[256];
-        // Hangi modda istek atacağımıza karar veriyoruz
+        
+        // Hangi butona basıldığına göre farklı adrese (rota) gidiyoruz
         if (ai_is_fetching == 2) {
             snprintf(url, sizeof(url), "http://ai_backend:5000/generate_users_bulk/%d", ai_bulk_count);
+        } else if (ai_is_fetching == 3) {
+            snprintf(url, sizeof(url), "http://ai_backend:5000/generate_photos_bulk/%d", ai_bulk_count);
+        } else if (ai_is_fetching == 4) {
+            snprintf(url, sizeof(url), "http://ai_backend:5000/generate_events_bulk/%d", ai_bulk_count);
         } else {
             snprintf(url, sizeof(url), "http://ai_backend:5000/generate_user_simple");
         }
         
         curl_easy_setopt(curl, CURLOPT_URL, url);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-        
         memset(ai_result_buffer, 0, sizeof(ai_result_buffer)); 
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, ai_result_buffer);
         
         res = curl_easy_perform(curl);
         if(res == CURLE_OK) {
-            ai_new_data_ready = ai_is_fetching; // 1 veya 2 dönecek
+            ai_new_data_ready = ai_is_fetching; // Başarılıysa mod numarasını dön (2, 3 veya 4)
         } else {
             strcpy(ai_result_buffer, "Hata");
             ai_new_data_ready = ai_is_fetching;
