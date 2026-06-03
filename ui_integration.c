@@ -31,7 +31,6 @@ static const char* edge_type_label(EdgeType type) {
     return edge_type_to_string(type);
 }
 
-// BORAN: Türkçe UTF-8 karakterleri İngilizce ASCII karakterlere dönüştüren temizleyici fonksiyon
 void Boran_turkish_to_ascii(char *dest, const char *src) {
     int d = 0;
     for (int i = 0; src[i] != '\0'; i++) {
@@ -59,7 +58,6 @@ void Boran_turkish_to_ascii(char *dest, const char *src) {
     dest[d] = '\0';
 }
 
-// BORAN: Trie ağacında girilen önekten (prefix) türeyen ilk 5 sonucu bulur
 void find_suggestions_recursive(TrieNode* current, Node** results, int* count, int max_count) {
     if (current == NULL || *count >= max_count) return;
 
@@ -155,8 +153,50 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
     DrawText("Isim / etkinlik ara (Enter):", panel_x + 16, 36, 14, DARKGRAY);
 
     static bool search_edit_mode = false;
-    if (GuiTextBox((Rectangle){ (float)panel_x + 16, 58, (float)panel_width - 32, 28 }, search_text_buffer, 63, search_edit_mode)) {
-        search_edit_mode = !search_edit_mode;
+
+    // --- 1. ÖNCE AUTOCOMPLETE HESAPLAMASI YAPILIR ---
+    // Arama kutusuna tıklanmadan ÖNCE farenin nerede olduğunu bulmalıyız ki tıklama çalınmasın.
+    int suggestion_count = 0;
+    Node* suggestions[5] = {0}; 
+    bool dropdown_active = false;
+    Rectangle drop_rect = {0};
+
+    if (search_edit_mode && strlen(search_text_buffer) > 0 && g_trie != NULL) {
+        TrieNode* current = g_trie;
+        int len = strlen(search_text_buffer);
+        bool found = true;
+
+        for (int i = 0; i < len; i++) {
+            int index = tolower((unsigned char)search_text_buffer[i]);
+            if (index < 0 || index >= ALPHABET_SIZE || current->children[index] == NULL) {
+                found = false; 
+                break;
+            }
+            current = current->children[index];
+        }
+
+        if (found) {
+            find_suggestions_recursive(current, suggestions, &suggestion_count, 5);
+            if (suggestion_count > 0) {
+                dropdown_active = true;
+                drop_rect = (Rectangle){ (float)panel_x + 16, 86, (float)panel_width - 32, (float)(suggestion_count * 25) };
+            }
+        }
+    }
+
+    Vector2 mousePoint = GetMousePosition();
+    bool mouse_in_dropdown = dropdown_active && CheckCollisionPointRec(mousePoint, drop_rect);
+
+    // --- 2. ARAMA KUTUSU KORUMASI ---
+    bool textbox_toggled = GuiTextBox((Rectangle){ (float)panel_x + 16, 58, (float)panel_width - 32, 28 }, search_text_buffer, 63, search_edit_mode);
+    
+    if (textbox_toggled) {
+        // Eğer fare açılır menünün üzerindeyse TextBox'ın kendini kapatmasını engelliyoruz!
+        if (!mouse_in_dropdown) {
+            search_edit_mode = !search_edit_mode;
+        } else {
+            search_edit_mode = true;
+        }
     }
 
     int start_y = 96;
@@ -165,7 +205,7 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
     static bool spinner_edit_mode = false;
 
     DrawText("Eklenecek Miktar:", panel_x + 16, start_y + 6, 14, DARKGRAY);
-    if (GuiSpinner((Rectangle){ (float)panel_x + 140, start_y, 100, 28 }, "", &bulk_add_count, 1, 100, spinner_edit_mode)) {
+    if (GuiSpinner((Rectangle){ (float)panel_x + 140, start_y, 100, 28 }, "", &bulk_add_count, 1, 100, spinner_edit_mode) && !mouse_in_dropdown) {
         spinner_edit_mode = !spinner_edit_mode;
     }
     start_y += 38;
@@ -179,17 +219,18 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
         GuiEnable();
         start_y += 114;
     } else {
-        if (GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "Yapay Zeka: Kullanici Ekle")) {
+        // Butonlar sadece fare açılır menünün dışındaysa tıklanabilir (!mouse_in_dropdown)
+        if (GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "Yapay Zeka: Kullanici Ekle") && !mouse_in_dropdown) {
             ai_bulk_count = bulk_add_count; ai_is_fetching = 2;
             pthread_t t; pthread_create(&t, NULL, fetch_ai_user_thread, NULL); pthread_detach(t);
         }
         start_y += 38;
-        if (GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "Yapay Zeka: Fotograf Ekle")) {
+        if (GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "Yapay Zeka: Fotograf Ekle") && !mouse_in_dropdown) {
             ai_bulk_count = bulk_add_count; ai_is_fetching = 3;
             pthread_t t; pthread_create(&t, NULL, fetch_ai_user_thread, NULL); pthread_detach(t);
         }
         start_y += 38;
-        if (GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "Yapay Zeka: Etkinlik Ekle")) {
+        if (GuiButton((Rectangle){ (float)panel_x + 16, start_y, (float)panel_width - 32, 28 }, "Yapay Zeka: Etkinlik Ekle") && !mouse_in_dropdown) {
             ai_bulk_count = bulk_add_count; ai_is_fetching = 4;
             pthread_t t; pthread_create(&t, NULL, fetch_ai_user_thread, NULL); pthread_detach(t);
         }
@@ -294,52 +335,29 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
         if (*line == '\n') line++;
     }
 
-    // --- GOOGLE TARZI AUTOCOMPLETE (AÇILIR KUTU) ---
-    if (search_edit_mode && strlen(search_text_buffer) > 0 && g_trie != NULL) {
-        TrieNode* current = g_trie;
-        int len = strlen(search_text_buffer);
-        bool found = true;
+    // --- GOOGLE TARZI AUTOCOMPLETE ÇİZİMİ ---
+    if (dropdown_active) {
+        DrawRectangleRec(drop_rect, RAYWHITE);
+        DrawRectangleLinesEx(drop_rect, 1, DARKGRAY);
 
-        for (int i = 0; i < len; i++) {
-            int index = tolower((unsigned char)search_text_buffer[i]);
-            if (index < 0 || index >= ALPHABET_SIZE || current->children[index] == NULL) {
-                found = false; 
-                break;
+        for (int i = 0; i < suggestion_count; i++) {
+            Rectangle item_rect = { drop_rect.x, drop_rect.y + (i * 25), drop_rect.width, 25 };
+            
+            bool isHovering = CheckCollisionPointRec(mousePoint, item_rect);
+            
+            if (isHovering) {
+                DrawRectangleRec(item_rect, LIGHTGRAY);
             }
-            current = current->children[index];
-        }
 
-        int suggestion_count = 0;
-        Node* suggestions[5] = {0}; 
+            char label[128] = {0};
+            node_get_display_label(suggestions[i], label, sizeof(label));
+            DrawText(label, item_rect.x + 8, item_rect.y + 6, 14, isHovering ? BLUE : DARKGRAY);
 
-        if (found) {
-            find_suggestions_recursive(current, suggestions, &suggestion_count, 5);
-        }
-
-        if (suggestion_count > 0) {
-            Rectangle drop_rect = { (float)panel_x + 16, 86, (float)panel_width - 32, (float)(suggestion_count * 25) };
-            DrawRectangleRec(drop_rect, RAYWHITE);
-            DrawRectangleLinesEx(drop_rect, 1, DARKGRAY);
-
-            for (int i = 0; i < suggestion_count; i++) {
-                Rectangle item_rect = { drop_rect.x, drop_rect.y + (i * 25), drop_rect.width, 25 };
-                
-                Vector2 mousePoint = GetMousePosition();
-                bool isHovering = CheckCollisionPointRec(mousePoint, item_rect);
-                
-                if (isHovering) {
-                    DrawRectangleRec(item_rect, LIGHTGRAY);
-                }
-
-                char label[128] = {0};
-                node_get_display_label(suggestions[i], label, sizeof(label));
-                DrawText(label, item_rect.x + 8, item_rect.y + 6, 14, isHovering ? BLUE : DARKGRAY);
-
-                if (isHovering && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                    strncpy(search_text_buffer, label, 63);
-                    search_text_buffer[63] = '\0';
-                    search_edit_mode = false; 
-                }
+            // ÇÖZÜM BURADA: Artık sadece parmak tuştan çekildiğinde işlem yapacak.
+            if (isHovering && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+                strncpy(search_text_buffer, label, 63);
+                search_text_buffer[63] = '\0';
+                search_edit_mode = false; 
             }
         }
     }
