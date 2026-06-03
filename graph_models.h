@@ -43,6 +43,8 @@ typedef struct {
     // --- YENİ EKLENEN: Görselleştirme için koordinatlar ---
     float x;
     float y;
+
+    int is_selected;
 } Node;
 
 
