@@ -1,0 +1,98 @@
+# depslib dependency file v1.0
+1780240156 source:c:\users\eminetaban\desktop\uludag_propherty_sosyalag\algorithms.c
+	<stdio.h>
+	<stdlib.h>
+	<stdbool.h>
+	"graph_adj.h"
+	"queue.h"
+
+1780240419 c:\users\eminetaban\desktop\uludag_propherty_sosyalag\graph_adj.h
+	"graph_models.h"
+	<stdbool.h>
+
+1780240419 c:\users\eminetaban\desktop\uludag_propherty_sosyalag\graph_models.h
+
+1780240156 c:\users\eminetaban\desktop\uludag_propherty_sosyalag\queue.h
+	"graph_models.h"
+	<stdbool.h>
+
+1780240156 source:c:\users\eminetaban\desktop\uludag_propherty_sosyalag\data_generator.c
+	<stdio.h>
+	<stdlib.h>
+	<time.h>
+	<string.h>
+	"graph_adj.h"
+	"hash_table.h"
+	"trie.h"
+	"data_generator.h"
+
+1780240419 c:\users\eminetaban\desktop\uludag_propherty_sosyalag\hash_table.h
+	"graph_models.h"
+
+1780240419 c:\users\eminetaban\desktop\uludag_propherty_sosyalag\trie.h
+	<stdbool.h>
+	<ctype.h>
+	"graph_models.h"
+
+1780240156 c:\users\eminetaban\desktop\uludag_propherty_sosyalag\data_generator.h
+	"graph_adj.h"
+	"hash_table.h"
+	"trie.h"
+
+1780243353 source:c:\users\eminetaban\desktop\uludag_propherty_sosyalag\graph_adj.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	"graph_adj.h"
+
+1780240419 source:c:\users\eminetaban\desktop\uludag_propherty_sosyalag\graph_models.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	"graph_models.h"
+
+1780240419 source:c:\users\eminetaban\desktop\uludag_propherty_sosyalag\hash_table.c
+	<stdio.h>
+	<stdlib.h>
+	"hash_table.h"
+
+1780240156 source:c:\users\eminetaban\desktop\uludag_propherty_sosyalag\queue.c
+	<stdio.h>
+	<stdlib.h>
+	"queue.h"
+
+1780240419 source:c:\users\eminetaban\desktop\uludag_propherty_sosyalag\trie.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<ctype.h>
+	"trie.h"
+
+1780240156 source:c:\users\eminetaban\desktop\uludag_propherty_sosyalag\ui_integration.c
+	<stdio.h>
+	"ui_integration.h"
+
+1780240156 c:\users\eminetaban\desktop\uludag_propherty_sosyalag\ui_integration.h
+	"graph_models.h"
+	"hash_table.h"
+	"trie.h"
+
+1780242207 source:c:\users\eminetaban\desktop\uludag_propherty_sosyalag\main.c
+	<stdio.h>
+	<stdlib.h>
+	<time.h>
+	"graph_adj.h"
+	"hash_table.h"
+	"trie.h"
+	"data_generator.h"
+	"queries.h"
+
+1780241473 c:\users\eminetaban\desktop\uludag_propherty_sosyalag\queries.h
+	"graph_adj.h"
+
+1780241995 source:c:\users\eminetaban\desktop\uludag_propherty_sosyalag\queries.c
+	<stdio.h>
+	<stdlib.h>
+	"queries.h"
+	"graph_models.h"
+

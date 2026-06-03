@@ -39,8 +39,18 @@ typedef struct {
     int property_count;     // Dizide o an kaç özellik olduğunu tutar
 
     // DİKKAT: next pointer'ı eklenmedi. 2. kişi kendi AdjListNode yapısında bunu yönetecek.
+<<<<<<< HEAD
 } Node;
 
+=======
+
+    // --- YENİ EKLENEN: Görselleştirme için koordinatlar ---
+    float x;
+    float y;
+} Node;
+
+
+>>>>>>> main
 // --- ADIM 4: Kenar (Edge) Tipleri ---
 typedef enum {
     FRIEND,     // Arkadaşlık ilişkisi (Örn: USER -> USER)
@@ -48,7 +58,11 @@ typedef enum {
     ATTENDS     // Katılım ilişkisi (Örn: USER -> EVENT)
 } EdgeType;
 
+<<<<<<< HEAD
 // --- Temel Kenar (Edge) Struct'ı ---
+=======
+//Temel Kenar (Edge) Struct'ı ---
+>>>>>>> main
 typedef struct {
     int source_id;          // Kaynak düğümün ID'si
     int target_id;          // Hedef düğümün ID'si
@@ -59,16 +73,26 @@ typedef struct {
     int property_count;     // Kenarda kaç özellik olduğunu tutar
 } Edge;
 
+<<<<<<< HEAD
 // --- ADIM 5: Bellek Yönetimi Fonksiyon Prototipleri ---
 
 // Node (Düğüm) Fonksiyonları
+=======
+
+
+// Bellek Yönetimi Fonksiyon Prototipleri ---
+>>>>>>> main
 Node* create_node(int id, NodeType type);
 void add_property_to_node(Node* node, const char* key, DataType type, void* value);
 void free_node(Node* node);
 
+<<<<<<< HEAD
 // Edge (Kenar) Fonksiyonları (YENİ EKLENEN KRİTİK GÜNCELLEME)
 Edge* create_edge(int source_id, int target_id, EdgeType type);
 void add_property_to_edge(Edge* edge, const char* key, DataType type, void* value);
 void free_edge(Edge* edge);
 
 #endif // GRAPH_MODELS_H
+=======
+#endif // GRAPH_MODELS_H
+>>>>>>> main

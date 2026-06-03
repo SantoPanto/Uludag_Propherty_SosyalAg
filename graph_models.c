@@ -4,7 +4,11 @@
 #include "graph_models.h" // Kendi başlık dosyamızı dahil ediyoruz
 
 // --- 1. Düğüm Oluşturma (Constructor) ---
+<<<<<<< HEAD
 // Yeni bir düğüm için bellekte (heap) yer açar ve başlangıç değerlerini atar.
+=======
+// Yeni bir düğüm için bellekte (heap) yer açar ve başlangıç değerlerini atar[cite: 60].
+>>>>>>> main
 Node* create_node(int id, NodeType type) {
     // 1. Düğüm için bellekte (heap) alan tahsis et (malloc)
     Node* new_node = (Node*)malloc(sizeof(Node));
@@ -18,12 +22,22 @@ Node* create_node(int id, NodeType type) {
     new_node->type = type;
     new_node->properties = NULL; // Başlangıçta özellik yok
     new_node->property_count = 0;
+<<<<<<< HEAD
 
+=======
+    // create_node fonksiyonunun içindeki atamaların altına şunu ekle:
+    new_node->x = (float)(rand() % 1600) - 800; // Rastgele x pozisyonu
+    new_node->y = (float)(rand() % 1200) - 600; // Rastgele y pozisyonu
+>>>>>>> main
     return new_node;
 }
 
 // --- 2. Düğüme Dinamik Özellik Ekleme ---
+<<<<<<< HEAD
 // Düğüme yeni bir özellik (anahtar-değer) ekler ve diziyi büyütür.
+=======
+// Düğüme yeni bir özellik (anahtar-değer) ekler ve diziyi büyütür[cite: 61].
+>>>>>>> main
 void add_property_to_node(Node* node, const char* key, DataType type, void* value) {
     if (node == NULL || key == NULL || value == NULL) return;
 
@@ -73,7 +87,11 @@ void add_property_to_node(Node* node, const char* key, DataType type, void* valu
 }
 
 // --- 3. Düğümü Silme (Destructor) ---
+<<<<<<< HEAD
 // Düğümü ve içindeki tüm dinamik dizileri/metinleri serbest bırakır (free eder). En kritik fonksiyondur.
+=======
+// Düğümü ve içindeki tüm dinamik dizileri/metinleri serbest bırakır (free eder). En kritik fonksiyondur[cite: 62].
+>>>>>>> main
 void free_node(Node* node) {
     if (node == NULL) return;
 
@@ -95,6 +113,7 @@ void free_node(Node* node) {
     // 3. Son olarak ana düğümü sil
     free(node);
 }
+<<<<<<< HEAD
 
 // --- 4. Kenar Oluşturma (Edge Constructor) ---
 // Yeni bir kenar için bellekte (heap) yer açar.
@@ -174,3 +193,5 @@ void free_edge(Edge* edge) {
     
     free(edge);
 }
+=======
+>>>>>>> main
