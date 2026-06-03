@@ -10,35 +10,76 @@
 
 Camera2D camera = { 0 };
 
-// Pencere ve grafik başlatma işlemleri
-void init_graphics_window() {
-    InitWindow(1280, 720, "Sosyal Ag Analiz Araci");
-    
-    // KAMERAYI BAŞLATIN
-    camera.target = (Vector2){ 0.0f, 0.0f }; // Merkeze bak
-    camera.offset = (Vector2){ 640.0f, 360.0f }; // Ekranın ortasına offsetle
-    camera.rotation = 0.0f;
-    camera.zoom = 1.0f; // Zoom 0 olmamalı!
-    
-    SetTargetFPS(60);
+static Color node_color_for_type(NodeType type, bool selected) {
+    if (selected) return RED;
+    switch (type) {
+        case USER: return BLUE;
+        case PHOTO: return GREEN;
+        case EVENT: return PURPLE;
+        default: return GRAY;
+    }
 }
 
-// Pencereyi kapatma
-void close_graphics_window() {
+static Color edge_color_for_type(EdgeType type) {
+    switch (type) {
+        case FRIEND: return LIGHTGRAY;
+        case LIKES: return SKYBLUE;
+        case ATTENDS: return ORANGE;
+        case HAS_PHOTO: return GOLD;
+        default: return DARKGRAY;
+    }
+}
+
+static Node* trie_first_match_from(TrieNode* node) {
+    if (node == NULL) return NULL;
+    if (node->isEndOfWord && node->matchingNodes != NULL) {
+        return node->matchingNodes->graphNode;
+    }
+    for (int i = 0; i < ALPHABET_SIZE; i++) {
+        if (node->children[i] != NULL) {
+            Node* found = trie_first_match_from(node->children[i]);
+            if (found != NULL) return found;
+        }
+    }
+    return NULL;
+}
+
+static Node* trie_find_first_node(TrieNode* root, const char* prefix) {
+    if (root == NULL || prefix == NULL || prefix[0] == '\0') return NULL;
+
+    TrieNode* current = root;
+    for (int i = 0; prefix[i] != '\0'; i++) {
+        int index = tolower((unsigned char)prefix[i]);
+        if (index < 0 || index >= ALPHABET_SIZE || current->children[index] == NULL) {
+            return NULL;
+        }
+        current = current->children[index];
+    }
+    return trie_first_match_from(current);
+}
+
+void init_graphics_window(void) {
+    InitWindow(1280, 720, "Property Graph - Sosyal Ag");
+    SetTargetFPS(60);
+    camera.target = (Vector2){ 0.0f, 0.0f };
+    camera.offset = (Vector2){ 640.0f, 360.0f };
+    camera.rotation = 0.0f;
+    camera.zoom = 0.85f;
+}
+
+void close_graphics_window(void) {
     CloseWindow();
 }
 
 void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node, char* search_text_buffer) {
-    
-    // --- 1. KAMERA KONTROLLERİ ---
     float wheel = GetMouseWheelMove();
     if (wheel != 0) {
         Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
         camera.offset = GetMousePosition();
         camera.target = mouseWorldPos;
-        camera.zoom += (wheel * 0.1f);
-        if (camera.zoom < 0.05f) camera.zoom = 0.05f;
-        if (camera.zoom > 10.0f) camera.zoom = 10.0f;
+        camera.zoom += (wheel * 0.12f);
+        if (camera.zoom < 0.08f) camera.zoom = 0.08f;
+        if (camera.zoom > 8.0f) camera.zoom = 8.0f;
     }
 
     if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
@@ -47,62 +88,85 @@ void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node,
         camera.target = Vector2Add(camera.target, delta);
     }
 
-    // --- 2. ÇİZİM İŞLEMLERİ ---
     BeginDrawing();
     ClearBackground(RAYWHITE);
 
-    // Dünya uzayı çizimi
     BeginMode2D(camera);
-        // Kenarların (çizgiler) çizilmesi
-        for (int i = 0; i < graph->node_count; i++) {
-            Node* src_node = graph->nodes[i];
-            AdjListNode* adj = graph->adjLists[i];
-            while (adj != NULL) {
-                int target_idx = find_node_index(graph, adj->edge->target_id);
-                if (target_idx != -1) {
-                    Node* target_node = graph->nodes[target_idx];
-                    DrawLine((int)src_node->x, (int)src_node->y, (int)target_node->x, (int)target_node->y, LIGHTGRAY);
-                }
-                adj = adj->next;
-            }
-        }
-    EndMode2D(); // Dünya koordinatları bitti
 
-    // --- DÜĞÜMLERİ EKRAN UZAYINDA (SCREEN SPACE) ÇİZ ---
+    for (int i = 0; i < graph->node_count; i++) {
+        Node* src_node = graph->nodes[i];
+        int src_idx = i;
+        AdjListNode* adj = graph->adjLists[src_idx];
+        while (adj != NULL) {
+            if (adj->edge != NULL) {
+                int target_idx = find_node_index(graph, adj->edge->target_id);
+                if (target_idx != -1 && src_idx < target_idx) {
+                    Node* target_node = graph->nodes[target_idx];
+                    DrawLineEx((Vector2){ src_node->x, src_node->y },
+                               (Vector2){ target_node->x, target_node->y },
+                               1.5f, edge_color_for_type(adj->edge->type));
+                }
+            }
+            adj = adj->next;
+        }
+    }
+
     for (int i = 0; i < graph->node_count; i++) {
         Node* n = graph->nodes[i];
-        // BeginMode2D'nin dışına çıkarak koordinatlara offset (640, 360) ekledik
         bool is_selected = (*selected_node != NULL && (*selected_node)->id == n->id);
-        DrawCircle((int)n->x + 640, (int)n->y + 360, is_selected ? 15.0f : 10.0f, is_selected ? RED : BLUE);
+        float radius = is_selected ? 14.0f : 9.0f;
+        Color fill = node_color_for_type(n->type, is_selected);
+
+        if (n->type == PHOTO) {
+            float s = radius * 2.0f;
+            DrawRectangle((int)(n->x - s / 2), (int)(n->y - s / 2), (int)s, (int)s, fill);
+        } else {
+            DrawCircle((int)n->x, (int)n->y, radius, fill);
+        }
+
+        if (camera.zoom > 0.5f) {
+            char label[48];
+            node_get_display_label(n, label, sizeof(label));
+            DrawText(label, (int)n->x - 40, (int)n->y - 28, 11, DARKGRAY);
+        }
     }
 
-    // --- 3. ARAYÜZ VE MANTIKSAL İŞLEMLER ---
-    
-    // UI panelini çiz
-    Boran_draw_ui_panel(*selected_node, search_text_buffer, GetScreenWidth(), GetScreenHeight());
-
-    // Arama Mantığı (Trie üzerinden düğüm bulma)
-    if (IsKeyPressed(KEY_ENTER) && strlen(search_text_buffer) > 0) {
-        TrieNode* current = trie_root;
-        bool found = true;
-        for (int i = 0; search_text_buffer[i] != '\0'; i++) {
-            int index = tolower((unsigned char)search_text_buffer[i]) - 'a';
-            if (index < 0 || index >= ALPHABET_SIZE || current->children[index] == NULL) {
-                found = false; break;
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        Vector2 mouse_world = GetScreenToWorld2D(GetMousePosition(), camera);
+        bool hit = false;
+        for (int i = graph->node_count - 1; i >= 0; i--) {
+            Node* n = graph->nodes[i];
+            float hit_radius = (n->type == PHOTO) ? 14.0f : 12.0f;
+            if (CheckCollisionPointCircle(mouse_world, (Vector2){ n->x, n->y }, hit_radius)) {
+                *selected_node = n;
+                hit = true;
+                break;
             }
-            current = current->children[index];
         }
-
-        if (found && current->isEndOfWord) {
-            Node* target = current->matchingNodes->graphNode;
-            camera.target = (Vector2){ target->x, target->y };
-            camera.zoom = 2.0f;
+        if (!hit) {
+            int sw = GetScreenWidth();
+            if (GetMouseX() < sw - 360) {
+                *selected_node = NULL;
+            }
         }
     }
 
-    // Bilgilendirme metinleri
-    DrawFPS(10, 10);
-    DrawText(TextFormat("Dugum Sayisi: %d", graph->node_count), 10, 35, 20, DARKGRAY);
+    EndMode2D();
+
+    Boran_draw_ui_panel(graph, *selected_node, search_text_buffer, GetScreenWidth(), GetScreenHeight());
+
+    if (IsKeyPressed(KEY_ENTER) && search_text_buffer != NULL && strlen(search_text_buffer) > 0) {
+        Node* found = trie_find_first_node(trie_root, search_text_buffer);
+        if (found != NULL) {
+            *selected_node = found;
+            camera.target = (Vector2){ found->x, found->y };
+            camera.zoom = 1.8f;
+        }
+    }
+
+    DrawRectangle(8, 8, 240, 52, Fade(WHITE, 0.85f));
+    DrawFPS(14, 14);
+    DrawText(TextFormat("Dugum: %d", graph->node_count), 14, 36, 16, DARKGRAY);
 
     EndDrawing();
 }

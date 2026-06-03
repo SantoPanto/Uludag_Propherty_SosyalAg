@@ -48,9 +48,10 @@ typedef struct {
 
 // --- ADIM 4: Kenar (Edge) Tipleri ---
 typedef enum {
-    FRIEND,     // Arkadaşlık ilişkisi (Örn: USER -> USER)
-    LIKES,      // Beğenme ilişkisi (Örn: USER -> PHOTO)
-    ATTENDS     // Katılım ilişkisi (Örn: USER -> EVENT)
+    FRIEND,     // Arkadaşlık (USER -> USER, yönsüz)
+    LIKES,      // Beğeni (USER -> PHOTO, yönlü)
+    ATTENDS,    // Katılım (USER -> EVENT, yönlü)
+    HAS_PHOTO   // Etkinlik fotoğrafı (EVENT -> PHOTO, yönlü)
 } EdgeType;
 
 //Temel Kenar (Edge) Struct'ı ---
@@ -70,5 +71,10 @@ typedef struct {
 Node* create_node(int id, NodeType type);
 void add_property_to_node(Node* node, const char* key, DataType type, void* value);
 void free_node(Node* node);
+
+const char* node_type_to_string(NodeType type);
+const char* edge_type_to_string(EdgeType type);
+int node_get_string_property(const Node* node, const char* key, char* out, int out_len);
+void node_get_display_label(const Node* node, char* out, int out_len);
 
 #endif // GRAPH_MODELS_H
