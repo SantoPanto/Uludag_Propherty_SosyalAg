@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  # 1. GÖRÜNMEZ BEYİN: Python AI Servisi
+  ai_backend:
+    build: 
+      context: ./ai_service
+      dockerfile: Dockerfile
+    container_name: sosyalag_ai_servisi
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+    restart: unless-stopped
+
+  # 2. GÖRSEL ARAYÜZ: Tarayıcı Üzerinden Açılacak C/Raylib Programı
+  frontend_ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: sosyalag_frontend_ui
+    ports:
+      - "3000:3000" # Tarayıcıdan giriş yapacağımız port
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Istanbul
+    shm_size: "1gb" # Raylib grafik çizimleri için RAM izni
+    restart: unless-stopped
