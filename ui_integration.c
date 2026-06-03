@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <ctype.h> 
 #include "graph_models.h"
 #include "hash_table.h"
 #include "trie.h"
@@ -17,20 +18,20 @@ extern HashTable* g_ht;
 extern TrieNode* g_trie;
 
 #ifndef DISABLE_AI
-extern char ai_result_buffer[8192]; // AI'dan gelen veriyi tutacak buffer (YENİ)
+extern char ai_result_buffer[8192];
 extern int ai_is_fetching;
 extern int ai_new_data_ready;
-extern int ai_bulk_count; // YENİ
+extern int ai_bulk_count; 
 void* fetch_ai_user_thread(void* arg);
 #endif
 
-// Dinamik olarak eklenen öğelerin ID'lerinin çakışmaması için sayaç
 static int dynamic_id_counter = 5000;
 
 static const char* edge_type_label(EdgeType type) {
     return edge_type_to_string(type);
 }
 
+// BORAN: Türkçe UTF-8 karakterleri İngilizce ASCII karakterlere dönüştüren temizleyici fonksiyon
 void Boran_turkish_to_ascii(char *dest, const char *src) {
     int d = 0;
     for (int i = 0; src[i] != '\0'; i++) {
@@ -53,10 +54,25 @@ void Boran_turkish_to_ascii(char *dest, const char *src) {
             if (next == 0x9F) { dest[d++] = 's'; i++; continue; }
             if (next == 0x9E) { dest[d++] = 'S'; i++; continue; }
         }
-
         dest[d++] = src[i];
     }
     dest[d] = '\0';
+}
+
+// BORAN: Trie ağacında girilen önekten (prefix) türeyen ilk 5 sonucu bulur
+void find_suggestions_recursive(TrieNode* current, Node** results, int* count, int max_count) {
+    if (current == NULL || *count >= max_count) return;
+
+    if (current->isEndOfWord && current->matchingNodes != NULL) {
+        results[*count] = current->matchingNodes->graphNode;
+        (*count)++;
+    }
+
+    for (int i = 0; i < ALPHABET_SIZE && *count < max_count; i++) {
+        if (current->children[i] != NULL) {
+            find_suggestions_recursive(current->children[i], results, count, max_count);
+        }
+    }
 }
 
 void Boran_format_side_panel_text(Graph* graph, Node* node, char* buffer, int max_len) {
@@ -145,7 +161,6 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
 
     int start_y = 96;
 
-    // --- COKLU EKLEME MIKTAR AYARI (SPINNER) ---
     static int bulk_add_count = 1;
     static bool spinner_edit_mode = false;
 
@@ -155,7 +170,6 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
     }
     start_y += 38;
 
-    // --- BUTONLAR (SADECE YAPAY ZEKA) ---
 #ifndef DISABLE_AI
     if (ai_is_fetching) {
         GuiDisable();
@@ -182,9 +196,8 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
         start_y += 38;
     }
 
-    // --- YAPAY ZEKA VERI ISLEME ---
     if (ai_new_data_ready > 0 && my_graph != NULL) {
-        int mode = ai_new_data_ready; // 2: Kullanici, 3: Fotograf, 4: Etkinlik
+        int mode = ai_new_data_ready; 
         ai_new_data_ready = 0;
         
         if (strcmp(ai_result_buffer, "Hata") != 0) {
@@ -195,7 +208,7 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
                 
                 Node* new_node = NULL;
                 
-                if (mode == 2) { // KULLANICI
+                if (mode == 2) { 
                     new_node = create_node(dynamic_id_counter++, USER);
                     new_node->x = (float)(rand() % 800) - 400.0f;
                     new_node->y = (float)(rand() % 800) - 400.0f;
@@ -213,14 +226,12 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
                         if (target->id != new_node->id) add_edge(my_graph, new_node->id, target->id, FRIEND, false);
                     }
                 } 
-                else if (mode == 3) { // FOTOGRAF
+                else if (mode == 3) { 
                     new_node = create_node(dynamic_id_counter++, PHOTO);
                     new_node->x = (float)(rand() % 800) - 400.0f;
                     new_node->y = (float)(rand() % 800) - 400.0f;
                     int size_mb = 2 + rand() % 10;
                     
-                    // ÇÖZÜM BURADA: graph_models.c'nin ismini ekrana basabilmesi için "Title" ekliyoruz.
-                    // Yan panelde ekstra detay olarak görünmesi için "Description" da ekliyoruz.
                     add_property_to_node(new_node, "Title", TYPE_STRING, safe_str);
                     add_property_to_node(new_node, "Description", TYPE_STRING, safe_str);
                     add_property_to_node(new_node, "Resolution", TYPE_STRING, "1920x1080");
@@ -236,7 +247,7 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
                         if (target->id != new_node->id) add_edge(my_graph, target->id, new_node->id, LIKES, true);
                     }
                 }
-                else if (mode == 4) { // ETKINLIK
+                else if (mode == 4) { 
                     new_node = create_node(dynamic_id_counter++, EVENT);
                     new_node->x = (float)(rand() % 800) - 400.0f;
                     new_node->y = (float)(rand() % 800) - 400.0f;
@@ -256,14 +267,12 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
                         }
                     }
                 }
-
                 token = strtok(NULL, "|");
             }
         }
     }
 #endif
 
-    // --- SECILEN DUGUMUN DETAYLARINI BASTIR ---
     char detail_text[2048] = {0};
     Boran_format_side_panel_text(graph, selected_node, detail_text, sizeof(detail_text));
 
@@ -283,5 +292,55 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
 
         line += i;
         if (*line == '\n') line++;
+    }
+
+    // --- GOOGLE TARZI AUTOCOMPLETE (AÇILIR KUTU) ---
+    if (search_edit_mode && strlen(search_text_buffer) > 0 && g_trie != NULL) {
+        TrieNode* current = g_trie;
+        int len = strlen(search_text_buffer);
+        bool found = true;
+
+        for (int i = 0; i < len; i++) {
+            int index = tolower((unsigned char)search_text_buffer[i]);
+            if (index < 0 || index >= ALPHABET_SIZE || current->children[index] == NULL) {
+                found = false; 
+                break;
+            }
+            current = current->children[index];
+        }
+
+        int suggestion_count = 0;
+        Node* suggestions[5] = {0}; 
+
+        if (found) {
+            find_suggestions_recursive(current, suggestions, &suggestion_count, 5);
+        }
+
+        if (suggestion_count > 0) {
+            Rectangle drop_rect = { (float)panel_x + 16, 86, (float)panel_width - 32, (float)(suggestion_count * 25) };
+            DrawRectangleRec(drop_rect, RAYWHITE);
+            DrawRectangleLinesEx(drop_rect, 1, DARKGRAY);
+
+            for (int i = 0; i < suggestion_count; i++) {
+                Rectangle item_rect = { drop_rect.x, drop_rect.y + (i * 25), drop_rect.width, 25 };
+                
+                Vector2 mousePoint = GetMousePosition();
+                bool isHovering = CheckCollisionPointRec(mousePoint, item_rect);
+                
+                if (isHovering) {
+                    DrawRectangleRec(item_rect, LIGHTGRAY);
+                }
+
+                char label[128] = {0};
+                node_get_display_label(suggestions[i], label, sizeof(label));
+                DrawText(label, item_rect.x + 8, item_rect.y + 6, 14, isHovering ? BLUE : DARKGRAY);
+
+                if (isHovering && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                    strncpy(search_text_buffer, label, 63);
+                    search_text_buffer[63] = '\0';
+                    search_edit_mode = false; 
+                }
+            }
+        }
     }
 }
