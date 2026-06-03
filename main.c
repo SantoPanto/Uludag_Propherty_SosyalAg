@@ -24,57 +24,22 @@ void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node,
 void close_graphics_window();
 
 int main(void) {
-    printf("=== Property Graph: Sosyal Ag Analiz Sistemi ===\n\n");
+    printf("=== Property Graph: Sosyal Ag Analiz Sistemi (Interaktif Mod) ===\n\n");
 
-    int test_users = 300;
-    int test_photos = 10;
-    int test_events = 10;
-    int max_nodes = test_users + test_photos + test_events + 50;
+    // İleride eklenecek düğümler için geniş bir kapasite (1000) ayırıyoruz
+    int max_nodes = 1000; 
 
     srand((unsigned int)time(NULL));
 
+    // Sistem başlangıcında içi bomboş olan veri yapılarını oluşturuyoruz
     my_graph = create_graph(max_nodes);
     g_ht = create_hash_table(max_nodes * 2);
     g_trie = Boran_createTrieNode();
 
-    clock_t start, end;
-    double cpu_time_used;
-
-    printf("[1] Veri yukleme testi...\n");
-    start = clock();
-    init_synthetic_data(my_graph, g_ht, g_trie, test_users, test_photos, test_events);
-    end = clock();
-    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
-    printf("[-] Yukleme suresi: %f sn\n\n", cpu_time_used);
-
-    printf("[2] Hash table (10.000 arama)...\n");
-    start = clock();
-    for (int i = 0; i < 10000; i++) {
-        int random_id = (rand() % test_users) + 1;
-        get_from_hash(g_ht, random_id);
-    }
-    end = clock();
-    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
-    printf("[-] Hash 10K arama: %f sn\n\n", cpu_time_used);
-
-    printf("[3] Trie on ek arama ('ali')...\n");
-    start = clock();
-    Boran_autocomplete(g_trie, "ali");
-    end = clock();
-    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
-    printf("[-] Trie arama: %f sn\n\n", cpu_time_used);
-
-    printf("[4] BFS en kisa yol (ID 1 -> %d)...\n", test_users / 2);
-    start = clock();
-    find_shortest_path(my_graph, 1, test_users / 2);
-    end = clock();
-    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
-    printf("[-] BFS: %f sn\n\n", cpu_time_used);
-
-    find_most_active_node(my_graph);
-    find_friends_events_photos(my_graph, 1);
-
-    printf("\n[+] Arayuz baslatiliyor...\n");
+    // NOT: Harita başlangıçta boş olacağı için eski otomatik performans testlerini
+    // (BFS, Hash arama vb.) kapattık. Aksi takdirde boş veride arama yapmaya çalışıp çökebilirdi.
+    
+    printf("[+] Arayuz baslatiliyor... Lutfen dugumleri sag paneldeki butonlarla ekleyin.\n");
 
     Node* selected_node = NULL;
     char search_text_buffer[64] = "";
@@ -91,6 +56,6 @@ int main(void) {
     free_hash_table(g_ht);
     Boran_freeTrie(g_trie);
 
-    printf("\n[+] Program tamamlandi.\n");
+    printf("\n[+] Program tamamlandi ve bellek temizlendi.\n");
     return 0;
 }
