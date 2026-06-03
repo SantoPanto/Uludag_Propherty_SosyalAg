@@ -4,10 +4,10 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g -Wno-unused-parameter
 
 # --- Linux için Raylib Kütüphaneleri ---
-LDFLAGS = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+LDFLAGS = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -lcurl
 
 # --- Projedeki Tüm Kaynak Dosyalar ---
-SRCS = main.c graph_models.c graph_adj.c hash_table.c trie.c queue.c algorithms.c data_generator.c ui_render.c ui_integration.c queries.c
+SRCS = main.c graph_models.c graph_adj.c hash_table.c trie.c queue.c algorithms.c data_generator.c ui_render.c ui_integration.c queries.c ai_client.c
 
 # --- Çıktı (Çalıştırılabilir) Dosya Adı ---
 # Linux ortamı için .exe uzantısı kaldırıldı

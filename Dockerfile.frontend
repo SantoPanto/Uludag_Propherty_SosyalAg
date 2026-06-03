@@ -1,12 +1,12 @@
 FROM lscr.io/linuxserver/webtop:ubuntu-xfce
 
-# 1. Gerekli derleme araçlarını kuruyoruz
+# 1. Gerekli derleme araçlarını ve CURL kütüphanesini kuruyoruz
 RUN apt-get update && \
     apt-get install -y build-essential make git wget \
     libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev \
-    libglu1-mesa-dev libxcursor-dev libxinerama-dev
+    libglu1-mesa-dev libxcursor-dev libxinerama-dev libcurl4-openssl-dev
 
-# 2. Raylib'i doğrudan GitHub'dan çekip kuruyoruz (Kesin Çözüm)
+# 2. Raylib'i doğrudan GitHub'dan çekip kuruyoruz
 RUN git clone --depth 1 https://github.com/raysan5/raylib.git /tmp/raylib && \
     cd /tmp/raylib/src && \
     make PLATFORM=PLATFORM_DESKTOP && \
