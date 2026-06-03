@@ -10,6 +10,6 @@
 void Boran_draw_ui_panel(Node* selected_node, char* search_text_buffer, int screen_width, int screen_height);
 
 // Arayüzü çizen ana fonksiyon prototipi
-void draw_graph_network(Graph* graph, TrieNode* trie_root);
+void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node, char* search_text_buffer);
 
 #endif // UI_RENDER_H
