@@ -99,16 +99,36 @@ Video drive linki: https://drive.google.com/file/d/1E7qHfPMbAEOgkUJrCXo7msvQ8cNG
 │
 └── [C Kaynak Kodları]       # Çekirdek Sistem Dosyaları
     ├── main.c               # Programın başlatıcısı, bellek ayırmaları ve ana grafik döngüsü.
+
     ├── graph_adj.h/.c       # Adjacency List veri yapısı, node ve kenar ekleme mantıkları.
     ├── hash_table.h/.c      # Hash tablosu algoritmaları (ID bazlı O(1) erişim).
     ├── trie.h/.c            # Trie (Önek Ağacı) arama ve otomatik tamamlama algoritmaları.
     ├── queue.h/.c           # BFS ve En Kısa Yol için Queue (Kuyruk) implementasyonu.
+
     ├── algorithms.h/.c      # BFS, DFS ve En Kısa Yol hesaplamaları.
-    ├── queries.h/.c         # Kompleks ağ sorguları ve Merkezilik (en aktif düğüm) analizleri.
-    ├── ai_client.c          # C'den Python AI servisine Curl ile asenkron HTTP istekleri atan modül.
-    ├── ui_integration.h/.c  # UI butonları, arayüz panelleri ve AI entegrasyon bağlayıcıları.
-    ├── ui_render.h/.c       # Raylib ile ekrana çizim (culling, neon, oklar) ve kamera kontrolleri.
-    └── raylib.h, raygui.h, raymath.h # Raylib harici UI kütüphaneleri
+    ├── queries.h/.c         # Kompleks ağ sorguları ve Merkezilik analizleri.
+
+    ├── graph_models.h/.c    # Kullanıcı, etkinlik ve fotoğraf düğüm modelleri;
+    │                         # düğüm oluşturma, veri alanları ve tip yönetimi.
+
+    ├── data_generator.h/.c  # Rastgele kullanıcı, arkadaşlık, etkinlik ve
+    │                        # fotoğraf verileri üreten test/veri üretim modülü.
+
+    ├── hash_table_benchmark.c
+    │                         # Hash tablosu performans testleri;
+    │                         # ekleme, arama ve yük faktörü benchmarkları.
+
+    ├── ai_client.c          # C'den Python AI servisine Curl ile asenkron HTTP
+    │                         # istekleri atan modül.
+
+    ├── ui_integration.h/.c  # UI butonları, arayüz panelleri ve AI entegrasyon
+    │                         # bağlayıcıları.
+
+    ├── ui_render.h/.c       # Raylib ile ekrana çizim, culling, oklar ve kamera
+    │                         # kontrolleri.
+
+    └── raylib.h, raygui.h, raymath.h
+                         # Harici grafik ve UI kütüphaneleri.
 
 🛠️ Kurulum ve Çalıştırma
 Projeyi ayağa kaldırmanın iki farklı yolu bulunmaktadır.
