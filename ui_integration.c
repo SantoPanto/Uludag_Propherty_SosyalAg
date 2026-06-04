@@ -87,7 +87,6 @@ void Boran_format_side_panel_text(Graph* graph, Node* node, char* buffer, int ma
     char label[128];
     node_get_display_label(node, label, sizeof(label));
     
-    // YENİ: Başlıklar daha estetik ve parse edilebilir (---) formatta yazıldı
     int offset = snprintf(buffer, (size_t)max_len,
                           "=== %s ===\nID: %d | Tur: %s\n\n--- OZELLIKLER ---\n",
                           label, node->id, node_type_to_string(node->type));
@@ -144,7 +143,6 @@ void Boran_format_side_panel_text(Graph* graph, Node* node, char* buffer, int ma
         offset += snprintf(buffer + offset, (size_t)(max_len - offset), "... (daha fazlasi var)\n");
     }
 
-    // Arkadaşının eklediği Gelen Bağlantılar mantığı korundu
     offset += snprintf(buffer + offset, (size_t)(max_len - offset), "\n--- GELEN BAGLANTILAR ---\n");
 
     int incoming_lines = 0;
@@ -275,8 +273,9 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
 
                 if (mode == 2) {
                     new_node = create_node(dynamic_id_counter++, USER);
-                    new_node->x = (float)(rand() % 800) - 400.0f;
-                    new_node->y = (float)(rand() % 800) - 400.0f;
+                    // YENİ: Alan 800x800'den 3000x3000'e çıkarıldı
+                    new_node->x = (float)(rand() % 3000) - 1500.0f;
+                    new_node->y = (float)(rand() % 3000) - 1500.0f;
                     int age = 18 + rand() % 40;
                     add_property_to_node(new_node, "Name", TYPE_STRING, strdup(safe_str));
                     add_property_to_node(new_node, "Age", TYPE_INTEGER, &age);
@@ -298,8 +297,9 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
                 }
                 else if (mode == 3) {
                     new_node = create_node(dynamic_id_counter++, PHOTO);
-                    new_node->x = (float)(rand() % 800) - 400.0f;
-                    new_node->y = (float)(rand() % 800) - 400.0f;
+                    // YENİ: Alan 3000x3000'e çıkarıldı
+                    new_node->x = (float)(rand() % 3000) - 1500.0f;
+                    new_node->y = (float)(rand() % 3000) - 1500.0f;
                     int size_mb = 2 + rand() % 10;
 
                     add_property_to_node(new_node, "Title", TYPE_STRING, safe_str);
@@ -324,8 +324,9 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
                 }
                 else if (mode == 4) {
                     new_node = create_node(dynamic_id_counter++, EVENT);
-                    new_node->x = (float)(rand() % 800) - 400.0f;
-                    new_node->y = (float)(rand() % 800) - 400.0f;
+                    // YENİ: Alan 3000x3000'e çıkarıldı
+                    new_node->x = (float)(rand() % 3000) - 1500.0f;
+                    new_node->y = (float)(rand() % 3000) - 1500.0f;
                     int capacity = 50 + rand() % 500;
                     add_property_to_node(new_node, "Title", TYPE_STRING, strdup(safe_str));
                     add_property_to_node(new_node, "Capacity", TYPE_INTEGER, &capacity);
@@ -360,7 +361,6 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
     const char* line = detail_text;
     char line_buf[256];
 
-    // YENİ: Metin çizim döngüsüne "Akıllı Renklendirme" (Syntax Highlighting) eklendi
     while (*line != '\0' && y < screen_height - 20) {
         int i = 0;
         while (line[i] != '\0' && line[i] != '\n' && i < 255) {
@@ -369,19 +369,17 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
         }
         line_buf[i] = '\0';
         
-        Color text_color = RAYWHITE; // Varsayılan veri rengi
+        Color text_color = RAYWHITE;
 
-        // Başlıkları (--- ile başlayanları) Mavi/Cyan yap
         if (strstr(line_buf, "===") != NULL || strstr(line_buf, "---") != NULL) {
             text_color = (Color){ 64, 196, 255, 255 }; 
         } 
-        // Ok işaretlerini ve bağlantıları Yumuşak Gri yap
         else if (strstr(line_buf, "->") != NULL || strstr(line_buf, "<-") != NULL) {
             text_color = (Color){ 180, 200, 220, 255 }; 
         }
 
         DrawText(line_buf, panel_x + 16, y, 14, text_color);
-        y += 18; // Satır aralığı
+        y += 18; 
 
         line += i;
         if (*line == '\n') line++;
