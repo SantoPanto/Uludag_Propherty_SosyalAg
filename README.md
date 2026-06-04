@@ -62,48 +62,39 @@ Sisteminizde `Docker` ve `Docker Compose` kuruluysa, tüm projeyi (C Frontend UI
 2. Terminalde aşağıdaki komutu çalıştırın:
    ```bash
    docker-compose up --build
-Bu komut;
+3. Bu komut;
+   - `ai_service/Dockerfile` dosyasını okuyarak Python AI API'sini başlatır.
+   - `Dockerfile.frontend` dosyasını okuyarak C uygulamasını derler ve çalıştırır. *(Not: GUI barındıran Docker container'larının ekranda görüntülenebilmesi için X11 Server ayarlarının yapılmış olması gerekebilir).*
 
-ai_service/Dockerfile dosyasını okuyarak Python AI API'sini başlatır.
-
-Dockerfile.frontend dosyasını okuyarak C uygulamasını derler ve çalıştırır. (Not: GUI barındıran Docker container'larının ekranda görüntülenebilmesi için X11 Server ayarlarının yapılmış olması gerekebilir).
-
-Yöntem 2: Manuel Derleme (Makefile ile Local Kurulum)
+### Yöntem 2: Manuel Derleme (Makefile ile Local Kurulum)
 Eğer uygulamayı direkt kendi işletim sisteminizde çalıştırmak istiyorsanız:
 
-Gereksinimler:
+**Gereksinimler:**
+* `gcc` derleyicisi
+* `make` aracı
+* `raylib` kütüphanesi (Sisteminizde yüklü olmalıdır)
+* `python3` ve `pip` (AI servisi için)
 
-gcc derleyicisi
+**Adımlar:**
 
-make aracı
+1. **AI Servisini Başlatın:**
+   ```bash
+   cd ai_service
+   pip install -r requirements.txt
+   python app.py
 
-raylib kütüphanesi (Sisteminizde yüklü olmalıdır)
+2. **C Uygulamasını Derleyin ve Çalıştırın:**
+   Yeni bir terminal sekmesi açıp ana dizine dönün:
+   ```bash
+   make clean
+   make
+   ./program_adi
 
-python3 ve pip (AI servisi için)
+   (Alternatif olarak Code::Blocks kullanıyorsanız SosyalAg.cbp proje dosyasını açıp derleyebilirsiniz).
 
-Adımlar:
+## 📂 Dizin Yapısı ve Dosyaların Görevleri
 
-AI Servisini Başlatın:
-
-Bash
-
-
-cd ai_service
-pip install -r requirements.txt
-python app.py
-(Servis arka planda http://localhost:PORT üzerinden dinlemeye başlayacaktır.)
-
-C Uygulamasını Derleyin ve Çalıştırın:
-Yeni bir terminal sekmesi açıp ana dizine dönün:
-
-Bash
-
-
-make clean
-make
-./program_adi
-(Alternatif olarak Code::Blocks kullanıyorsanız SosyalAg.cbp proje dosyasını açıp derleyebilirsiniz).
-
+```text
 ├── .gitignore               # Git takibine alınmayacak dosyalar
 ├── Makefile                 # C projesinin derleme yönergeleri
 ├── docker-compose.yml       # Frontend ve AI servisini aynı anda ayağa kaldıran yapılandırma
@@ -134,12 +125,12 @@ make
     ├── ai_client.c          # C'den Python AI servisine HTTP istekleri atan istemci
     ├── ui_integration.h/.c  # UI ile C mantıksal arka planını bağlayan entegrasyon
     ├── ui_render.h/.c       # Raylib ile ekrana çizim işlemlerini yapan motor
-    ├── raylib.h, raygui.h, raymath.h # Raylib harici UI kütüphaneleri
+    └── raylib.h, raygui.h, raymath.h # Raylib harici UI kütüphaneleri
 
 
-    🎮 Kullanım
+## 🎮 Kullanım
+
 Uygulama başarıyla başlatıldığında karşınıza Raylib ile oluşturulmuş görsel bir ekran gelecektir.
 
-Ekranda sosyal ağdaki kişileri temsil eden düğümler (nodlar) ve aralarındaki arkadaşlık bağlarını görebilirsiniz.
-
-Sol/Sağ panellerdeki arayüz butonlarını (raygui) kullanarak kullanıcı arayabilir, ortak arkadaşları filtreleyebilir veya AI analiz butonlarına tıklayarak seçili graf verisi hakkında yapay zekadan yorum alabilirsiniz.
+* Ekranda sosyal ağdaki kişileri temsil eden düğümler (nodlar) ve aralarındaki arkadaşlık bağlarını görebilirsiniz.
+* Sol/Sağ panellerdeki arayüz butonlarını (raygui) kullanarak kullanıcı arayabilir, ortak arkadaşları filtreleyebilir veya AI analiz butonlarına tıklayarak seçili graf verisi hakkında yapay zekadan yorum alabilirsiniz.
