@@ -50,13 +50,10 @@ void init_graphics_window(void) {
     InitWindow(1280, 720, "Property Graph - Sosyal Ag");
     SetTargetFPS(60);
 
-    // --- YENİ FONT AYARI ---
-    // Roboto dosyasını sildik, Raylib'in kendi köşeli/dijital fontunu çekiyoruz
     guiFont = GetFontDefault();
     GuiSetFont(guiFont);
 
-    // Dark Mode Stilleri
-    GuiSetStyle(DEFAULT, TEXT_SIZE, 16); // Köşeli fontlar 16 gibi çift sayılarda jilet gibi durur
+    GuiSetStyle(DEFAULT, TEXT_SIZE, 16); 
     GuiSetStyle(DEFAULT, TEXT_SPACING, 1); 
     
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, 0x1E2126FF);
@@ -74,8 +71,6 @@ void init_graphics_window(void) {
 }
 
 void close_graphics_window(void) {
-    // ÖNEMLİ: Raylib'in varsayılan fontu bellekten silinemez.
-    // Bu yüzden buradaki UnloadFont(guiFont); kodunu siliyoruz ki program çökmesin.
     CloseWindow();
 }
 
@@ -102,7 +97,12 @@ void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node,
     int sw = GetScreenWidth();
     bool is_mouse_on_ui = (GetMouseX() > sw - 360);
 
-    // Mouse Etkileşimleri (Yeni Seçim Mantığı Korundu)
+    // Ekranın dünya koordinatlarındaki sınırlarını bul (CULLING KALKANI İÇİN)
+    // Ekrana 100 piksellik bir pay (padding) bırakıyoruz ki kenardakiler aniden yok olmasın
+    Vector2 top_left = GetScreenToWorld2D((Vector2){ -100, -100 }, camera);
+    Vector2 bottom_right = GetScreenToWorld2D((Vector2){ sw + 100, GetScreenHeight() + 100 }, camera);
+
+    // Mouse Etkileşimleri
     if (!is_mouse_on_ui) {
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             bool hit = false;
@@ -151,7 +151,7 @@ void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node,
                     Node* n = graph->nodes[i];
                     if (CheckCollisionPointRec((Vector2){n->x, n->y}, sel_rect)) {
                         n->is_selected = 1;
-                        *selected_node = n; // Son seçileni aktif node yap
+                        *selected_node = n; 
                     }
                 }
                 is_selecting = false;
@@ -161,25 +161,70 @@ void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node,
     }
 
     BeginDrawing();
-    ClearBackground((Color){ 34, 39, 46, 255 }); // Koyu Antrasit Arka Plan
+    ClearBackground((Color){ 34, 39, 46, 255 }); 
     BeginMode2D(camera);
 
-    // Kenarları Çiz
+    float time_now = GetTime(); 
+
+    // --- KENARLARI ÇİZ VE OPTİMİZE ET ---
     for (int i = 0; i < graph->node_count; i++) {
         Node* src = graph->nodes[i];
         AdjListNode* adj = graph->adjLists[i];
         while (adj != NULL) {
             int target_idx = find_node_index(graph, adj->edge->target_id);
-            if (target_idx != -1 && i < target_idx) {
+            if (target_idx != -1) {
                 Node* target = graph->nodes[target_idx];
                 bool is_src_sel = src->is_selected || (*selected_node != NULL && (*selected_node)->id == src->id);
                 bool is_target_sel = target->is_selected || (*selected_node != NULL && (*selected_node)->id == target->id);
                 
                 float thick = (is_src_sel || is_target_sel) && !is_selecting ? 4.0f : 1.0f;
                 Color col = edge_color_for_type(adj->edge->type);
-                if (thick == 1.0f && (*selected_node != NULL || is_selecting)) col.a = 40; // Ghosting efekti
+                if (thick == 1.0f && (*selected_node != NULL || is_selecting)) col.a = 40; 
                 
-                DrawLineEx((Vector2){src->x, src->y}, (Vector2){target->x, target->y}, thick, col);
+                Vector2 start_pos = { src->x, src->y };
+                Vector2 end_pos = { target->x, target->y };
+                
+                // 1. Düz çizgiyi her halükarda çiz (DrawLine çok hafiftir, FPS düşürmez)
+                DrawLineEx(start_pos, end_pos, thick, col);
+
+                // --- 2. GÖRÜŞ ALANI (CULLING) KONTROLÜ ---
+                // Düğümlerden en az biri kameranın içindeyse o ağır matematiğe gir, değilse atla!
+                bool is_src_visible = (start_pos.x > top_left.x && start_pos.x < bottom_right.x && start_pos.y > top_left.y && start_pos.y < bottom_right.y);
+                bool is_target_visible = (end_pos.x > top_left.x && end_pos.x < bottom_right.x && end_pos.y > top_left.y && end_pos.y < bottom_right.y);
+
+                if (is_src_visible || is_target_visible) {
+                    float dx = end_pos.x - start_pos.x;
+                    float dy = end_pos.y - start_pos.y;
+                    float angle = atan2f(dy, dx); // Artık saniyede binlerce kez gereksiz yere çalışmıyor
+                    
+                    float target_radius = (target->is_selected) ? 22.0f : 14.0f;
+                    float offset = target_radius + 4.0f; 
+                    Vector2 arrow_end = { end_pos.x - cosf(angle) * offset, end_pos.y - sinf(angle) * offset };
+
+                    // Yön Okları
+                    float arrow_size = thick > 1.0f ? 12.0f : 8.0f; 
+                    Vector2 wing1 = { arrow_end.x - cosf(angle - 0.4f) * arrow_size, arrow_end.y - sinf(angle - 0.4f) * arrow_size };
+                    Vector2 wing2 = { arrow_end.x - cosf(angle + 0.4f) * arrow_size, arrow_end.y - sinf(angle + 0.4f) * arrow_size };
+                    
+                    DrawLineEx(arrow_end, wing1, thick + 1.0f, col);
+                    DrawLineEx(arrow_end, wing2, thick + 1.0f, col);
+
+                    // Enerji Akışı (Sadece yakınken)
+                    if (camera.zoom > 0.4f && col.a > 50) { 
+                        float anim_speed = 0.6f; 
+                        float time_offset = (float)(src->id + target->id) * 0.1f; 
+                        
+                        float t = fmodf((time_now * anim_speed) + time_offset, 1.0f);
+                        Vector2 particle_pos = { start_pos.x + dx * t, start_pos.y + dy * t };
+                        
+                        Color particle_color = edge_color_for_type(adj->edge->type);
+                        particle_color.a = 255; 
+                        
+                        // Kare çizmek yuvarlak çizmekten ÇOK daha hafiftir ve cyberpunk temaya çok uyar
+                        float p_size = thick + 2.0f;
+                        DrawRectangleRec((Rectangle){particle_pos.x - p_size, particle_pos.y - p_size, p_size*2, p_size*2}, particle_color);
+                    }
+                }
             }
             adj = adj->next;
         }
@@ -188,66 +233,61 @@ void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node,
     // Düğümleri Çiz
     for (int i = 0; i < graph->node_count; i++) {
         Node* n = graph->nodes[i];
+        
+        // --- DÜĞÜM CULLING ---
+        // Ekranda olmayan düğümü hiç çizmeye uğraşma
+        if (n->x < top_left.x || n->x > bottom_right.x || n->y < top_left.y || n->y > bottom_right.y) {
+            continue; 
+        }
+
         bool is_node_sel = n->is_selected || (*selected_node != NULL && (*selected_node)->id == n->id);
         float size = is_node_sel ? 22.0f : 14.0f;
         Color fill = node_color_for_type(n->type);
-        Color border = is_node_sel ? (Color){ 255, 235, 59, 255 } : (Color){ 20, 24, 30, 255 }; // Koyu Antrasit veya Sarı Çerçeve
+        Color border = is_node_sel ? (Color){ 255, 235, 59, 255 } : (Color){ 20, 24, 30, 255 }; 
         
-        // Mouse bu düğmenin üzerinde mi?
         bool is_hovered = CheckCollisionPointCircle(mouse_world, (Vector2){n->x, n->y}, size);
 
-        // --- 1. HARİKA DOKUNUŞ: NEON PARLAMA (GLOW) EFEKTİ ---
+        // Neon Parlama
         if (is_node_sel || is_hovered) {
-            float glow_size = size * 1.8f; // Parlama boyutu
-            Color glow_color = Fade(fill, 0.4f); // Rengin saydam (hafif) hali
+            float glow_size = size * 1.8f; 
+            Color glow_color = Fade(fill, 0.4f); 
             
             if (n->type == PHOTO) DrawRectangleRec((Rectangle){n->x-glow_size, n->y-glow_size, glow_size*2, glow_size*2}, glow_color);
             else if (n->type == EVENT) DrawPoly((Vector2){n->x, n->y}, 3, glow_size, 0, glow_color);
             else DrawCircleV((Vector2){n->x, n->y}, glow_size, glow_color);
         }
 
-        // --- 2. HARİKA DOKUNUŞ: DERİNLİK VE DIŞ ÇERÇEVE (OUTLINE) ---
-        float border_thick = 3.0f; // Çerçevenin kalınlığını buradan ayarlayabilirsin
+        // Derinlik ve Çerçeve
+        float border_thick = 3.0f; 
 
-        if (n->type == PHOTO) { // Kare
-            // Önce biraz daha büyük koyu çerçeveyi çiz
+        if (n->type == PHOTO) { 
             DrawRectangleRec((Rectangle){n->x-size-border_thick, n->y-size-border_thick, (size+border_thick)*2, (size+border_thick)*2}, border);
-            // Sonra renkli dolguyu çiz
             DrawRectangleRec((Rectangle){n->x-size, n->y-size, size*2, size*2}, fill);
         }
-        else if (n->type == EVENT) { // Üçgen
+        else if (n->type == EVENT) { 
             DrawPoly((Vector2){n->x, n->y}, 3, size + border_thick, 0, border);
             DrawPoly((Vector2){n->x, n->y}, 3, size, 0, fill);
         }
-        else { // Yuvarlak (USER)
+        else { 
             DrawCircleV((Vector2){n->x, n->y}, size + border_thick, border);
             DrawCircleV((Vector2){n->x, n->y}, size, fill);
         }
         
-        // --- 3. HARİKA DOKUNUŞ: AKILLI ETİKET (CLEAN UI) ---
-        // Sadece çok yakınlaşıldığında VEYA düğüm seçiliyse VEYA fare üzerindeyse yazıyı göster
+        // Akıllı Etiket (Sadece yakınken veya seçiliyken)
         if (camera.zoom > 1.2f || is_node_sel || is_hovered) {
             char label[64]; 
             node_get_display_label(n, label, sizeof(label));
             
-            // Yeni font sistemine göre yazının piksel genişliğini ölçüyoruz
             Vector2 sz = MeasureTextEx(guiFont, label, 14, 1);
-            
             float text_x = n->x - (sz.x / 2.0f);
-            float text_y = n->y + size + border_thick + 8.0f; // Yazıyı çerçevenin biraz daha altına ittik
+            float text_y = n->y + size + border_thick + 8.0f; 
 
-            // Yazıların arkasına yarı saydam siyah kapsül eklendi
             DrawRectangle((int)text_x - 4, (int)text_y - 2, (int)sz.x + 8, (int)sz.y + 4, Fade(BLACK, 0.8f));
-            
-            // Eğer fare üzerindeyse veya seçiliyse yazıyı daha parlak yap
             Color text_color = (is_hovered || is_node_sel) ? (Color){ 64, 196, 255, 255 } : RAYWHITE;
-            
-            // Yazıyı yüksek çözünürlüklü çizdir
             DrawTextEx(guiFont, label, (Vector2){text_x, text_y}, 14, 1, text_color);
         }
     }
 
-    // Seçim Kutusu (Marquee) Çizimi
     if (is_selecting) {
         Rectangle sel_rect = { fminf(selection_start.x, selection_end.x), fminf(selection_start.y, selection_end.y), 
                                fabsf(selection_end.x - selection_start.x), fabsf(selection_end.y - selection_start.y) };
@@ -257,24 +297,18 @@ void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node,
 
     EndMode2D();
     
-    // Sağ Paneli Çiz
     Boran_draw_ui_panel(graph, *selected_node, search_text_buffer, sw, GetScreenHeight());
 
-    // --- YENİ: Sol Üst Bilgi Kutusu ve FPS Sayacı ---
-    int box_y = 35; // Kutuyu pencerenin üstünden biraz daha uzaklaştırdık
-    
-    // Kutunun yüksekliğini 56'dan 64'e çıkardık ki yazılar rahat nefes alsın
+    int box_y = 35; 
     DrawRectangle(8, box_y, 200, 64, (Color){ 25, 29, 36, 220 }); 
     DrawRectangleLines(8, box_y, 200, 64, (Color){ 74, 83, 101, 255 }); 
 
     int current_fps = GetFPS();
     Color fps_color = (current_fps >= 45) ? (Color){ 105, 240, 174, 255 } : (Color){ 255, 171, 64, 255 }; 
     
-    // Yazıları kutunun üst çizgisinden biraz daha aşağı kaydırdık (+12 ve +36)
     DrawText(TextFormat("%d FPS", current_fps), 16, box_y + 12, 16, fps_color);
     DrawText(TextFormat("Toplam Dugum: %d", graph->node_count), 16, box_y + 36, 14, RAYWHITE);
 
-    // Arama
     if (IsKeyPressed(KEY_ENTER) && search_text_buffer != NULL && strlen(search_text_buffer) > 0) {
         char clean[64] = {0};
         Boran_turkish_to_ascii(clean, search_text_buffer);
