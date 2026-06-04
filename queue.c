@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include "queue.h" // Güncellendi: Artık queue.h dosyasını çağırıyor
 
+
+//EMİNE TABAN
+
 // Kuyruğu başlatır
 Queue* create_queue() {
     Queue* q = (Queue*)malloc(sizeof(Queue));
