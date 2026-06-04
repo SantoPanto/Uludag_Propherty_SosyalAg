@@ -79,15 +79,17 @@ void Boran_format_side_panel_text(Graph* graph, Node* node, char* buffer, int ma
     if (node == NULL) {
         snprintf(buffer, (size_t)max_len,
                  "Haritadan bir dugume tiklayin.\n\n"
-                 "Turler:\n- Mavi: Kullanici\n- Yesil: Fotograf\n- Mor: Etkinlik\n\n"
+                 "--- TURLER ---\n- Mavi: Kullanici\n- Yesil: Fotograf\n- Mor: Etkinlik\n\n"
                  "Arama kutusuna isim yazip Enter'a basin.");
         return;
     }
 
     char label[128];
     node_get_display_label(node, label, sizeof(label));
+    
+    // YENİ: Başlıklar daha estetik ve parse edilebilir (---) formatta yazıldı
     int offset = snprintf(buffer, (size_t)max_len,
-                          "=== %s ===\nID: %d | Tur: %s\n\nOZELLIKLER:\n",
+                          "=== %s ===\nID: %d | Tur: %s\n\n--- OZELLIKLER ---\n",
                           label, node->id, node_type_to_string(node->type));
 
     for (int i = 0; i < node->property_count && offset < max_len - 1; i++) {
@@ -95,10 +97,10 @@ void Boran_format_side_panel_text(Graph* graph, Node* node, char* buffer, int ma
         if (p->name == NULL) continue;
         if (p->type == TYPE_STRING && p->value.s_val != NULL) {
             offset += snprintf(buffer + offset, (size_t)(max_len - offset),
-                               "- %s: %s\n", p->name, p->value.s_val);
+                               " %s: %s\n", p->name, p->value.s_val);
         } else if (p->type == TYPE_INTEGER) {
             offset += snprintf(buffer + offset, (size_t)(max_len - offset),
-                               "- %s: %d\n", p->name, p->value.i_val);
+                               " %s: %d\n", p->name, p->value.i_val);
         }
     }
 
@@ -107,7 +109,7 @@ void Boran_format_side_panel_text(Graph* graph, Node* node, char* buffer, int ma
     int node_idx = find_node_index(graph, node->id);
     if (node_idx == -1) return;
 
-    offset += snprintf(buffer + offset, (size_t)(max_len - offset), "\nILISKILER (cikis kenarlari):\n");
+    offset += snprintf(buffer + offset, (size_t)(max_len - offset), "\n--- CIKIS BAGLANTILARI ---\n");
 
     int edge_lines = 0;
     AdjListNode* adj = graph->adjLists[node_idx];
@@ -139,10 +141,11 @@ void Boran_format_side_panel_text(Graph* graph, Node* node, char* buffer, int ma
     if (edge_lines == 0) {
         offset += snprintf(buffer + offset, (size_t)(max_len - offset), "(Cikis baglantisi yok)\n");
     } else if (adj != NULL) {
-        offset += snprintf(buffer + offset, (size_t)(max_len - offset), "... (daha fazla kenar var)\n");
+        offset += snprintf(buffer + offset, (size_t)(max_len - offset), "... (daha fazlasi var)\n");
     }
 
-    offset += snprintf(buffer + offset, (size_t)(max_len - offset), "\nGELEN BAGLANTILAR:\n");
+    // Arkadaşının eklediği Gelen Bağlantılar mantığı korundu
+    offset += snprintf(buffer + offset, (size_t)(max_len - offset), "\n--- GELEN BAGLANTILAR ---\n");
 
     int incoming_lines = 0;
     for (int i = 0; i < graph->node_count && offset < max_len - 40 && incoming_lines < 12; i++) {
@@ -166,7 +169,7 @@ void Boran_format_side_panel_text(Graph* graph, Node* node, char* buffer, int ma
     if (incoming_lines == 0) {
         snprintf(buffer + offset, (size_t)(max_len - offset), "(Gelen baglanti yok)\n");
     } else if (incoming_lines >= 12) {
-        snprintf(buffer + offset, (size_t)(max_len - offset), "... (daha fazla gelen var)\n");
+        snprintf(buffer + offset, (size_t)(max_len - offset), "... (daha fazlasi var)\n");
     }
 }
 
@@ -177,8 +180,7 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
 
     GuiPanel((Rectangle){ (float)panel_x, 0, (float)panel_width, (float)screen_height }, "Property Graph Paneli");
 
-    // YENİ: Yazı rengi DARKGRAY'den RAYWHITE'a çevrildi
-    DrawText("Isim / etkinlik ara (Enter):", panel_x + 16, 36, 14, RAYWHITE);
+    DrawText("Isim / etkinlik ara (Enter):", panel_x + 16, 36, 14, (Color){ 200, 210, 220, 255 });
 
     static bool search_edit_mode = false;
 
@@ -224,12 +226,10 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
     }
 
     int start_y = 96;
-
     static int bulk_add_count = 1;
     static bool spinner_edit_mode = false;
 
-    // YENİ: Yazı rengi RAYWHITE yapıldı ve arkadaşının !mouse_in_dropdown kontrolü eklendi
-    DrawText("Eklenecek Miktar:", panel_x + 16, start_y + 6, 14, RAYWHITE);
+    DrawText("Eklenecek Miktar:", panel_x + 16, start_y + 6, 14, (Color){ 200, 210, 220, 255 });
     if (GuiSpinner((Rectangle){ (float)panel_x + 140, start_y, 100, 28 }, "", &bulk_add_count, 1, 100, spinner_edit_mode) && !mouse_in_dropdown) {
         spinner_edit_mode = !spinner_edit_mode;
     }
@@ -286,10 +286,10 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
                     if (g_trie != NULL) Boran_insertToTrie(g_trie, strdup(safe_str), new_node);
 
                     if (my_graph->node_count > 1) {
-                        for (int t = 0; t < 20; t++) { // 20 defa deneme hakkı
+                        for (int t = 0; t < 20; t++) {
                             int random_target_idx = rand() % my_graph->node_count;
                             Node* target = my_graph->nodes[random_target_idx];
-                            if (target->id != new_node->id && target->type == USER) { // Sadece USER ile arkadaş olabilir
+                            if (target->id != new_node->id && target->type == USER) {
                                 add_edge(my_graph, new_node->id, target->id, FRIEND, false);
                                 break;
                             }
@@ -315,7 +315,7 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
                         for (int t = 0; t < 20; t++) {
                             int random_target_idx = rand() % my_graph->node_count;
                             Node* target = my_graph->nodes[random_target_idx];
-                            if (target->id != new_node->id && target->type == USER) { // Sadece USER beğenebilir
+                            if (target->id != new_node->id && target->type == USER) {
                                 add_edge(my_graph, target->id, new_node->id, LIKES, true);
                                 break;
                             }
@@ -339,7 +339,7 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
                             for (int t = 0; t < 20; t++) {
                                 int random_target_idx = rand() % my_graph->node_count;
                                 Node* target = my_graph->nodes[random_target_idx];
-                                if (target->id != new_node->id && target->type == USER) { // Sadece USER katılabilir
+                                if (target->id != new_node->id && target->type == USER) {
                                     add_edge(my_graph, target->id, new_node->id, ATTENDS, true);
                                     break;
                                 }
@@ -356,10 +356,11 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
     char detail_text[2048] = {0};
     Boran_format_side_panel_text(graph, selected_node, detail_text, sizeof(detail_text));
 
-    int y = start_y;
+    int y = start_y + 10;
     const char* line = detail_text;
     char line_buf[256];
 
+    // YENİ: Metin çizim döngüsüne "Akıllı Renklendirme" (Syntax Highlighting) eklendi
     while (*line != '\0' && y < screen_height - 20) {
         int i = 0;
         while (line[i] != '\0' && line[i] != '\n' && i < 255) {
@@ -368,36 +369,41 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
         }
         line_buf[i] = '\0';
         
-        // YENİ: Düğüm detayları RAYWHITE (Beyaz) yapıldı
-        DrawText(line_buf, panel_x + 16, y, 14, RAYWHITE);
-        y += 18;
+        Color text_color = RAYWHITE; // Varsayılan veri rengi
+
+        // Başlıkları (--- ile başlayanları) Mavi/Cyan yap
+        if (strstr(line_buf, "===") != NULL || strstr(line_buf, "---") != NULL) {
+            text_color = (Color){ 64, 196, 255, 255 }; 
+        } 
+        // Ok işaretlerini ve bağlantıları Yumuşak Gri yap
+        else if (strstr(line_buf, "->") != NULL || strstr(line_buf, "<-") != NULL) {
+            text_color = (Color){ 180, 200, 220, 255 }; 
+        }
+
+        DrawText(line_buf, panel_x + 16, y, 14, text_color);
+        y += 18; // Satır aralığı
 
         line += i;
         if (*line == '\n') line++;
     }
 
-    // --- GOOGLE TARZI AUTOCOMPLETE (AÇILIR KUTU) ÇİZİMİ (KARANLIK TEMA) ---
     if (dropdown_active) {
-        // Arka plan Koyu Gri/Lacivert tonuna çevrildi
         DrawRectangleRec(drop_rect, (Color){ 30, 34, 40, 255 });
-        DrawRectangleLinesEx(drop_rect, 1, (Color){ 74, 83, 101, 255 }); // İnce çerçeve
+        DrawRectangleLinesEx(drop_rect, 1, (Color){ 74, 83, 101, 255 }); 
 
         for (int i = 0; i < suggestion_count; i++) {
             Rectangle item_rect = { drop_rect.x, drop_rect.y + (i * 25), drop_rect.width, 25 };
             bool isHovering = CheckCollisionPointRec(mousePoint, item_rect);
 
             if (isHovering) {
-                // Üzerine gelince (hover) koyu temaya uygun şık gri
                 DrawRectangleRec(item_rect, (Color){ 68, 75, 87, 255 });
             }
 
             char label[128] = {0};
             node_get_display_label(suggestions[i], label, sizeof(label));
             
-            // Yazı renkleri Beyaz, hover olunca Cyan (Mavi) yapıldı
             DrawText(label, item_rect.x + 8, item_rect.y + 6, 14, isHovering ? (Color){ 64, 196, 255, 255 } : RAYWHITE);
 
-            // Arkadaşının MouseReleased mantığı korundu
             if (isHovering && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
                 strncpy(search_text_buffer, label, 63);
                 search_text_buffer[63] = '\0';
