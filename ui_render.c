@@ -50,13 +50,15 @@ void init_graphics_window(void) {
     InitWindow(1280, 720, "Property Graph - Sosyal Ag");
     SetTargetFPS(60);
 
-    // Font Yükleme
-    guiFont = LoadFontEx("Roboto-Regular.ttf", 18, 0, 250);
+    // --- YENİ FONT AYARI ---
+    // Roboto dosyasını sildik, Raylib'in kendi köşeli/dijital fontunu çekiyoruz
+    guiFont = GetFontDefault();
     GuiSetFont(guiFont);
 
     // Dark Mode Stilleri
-    GuiSetStyle(DEFAULT, TEXT_SIZE, 18);
-    GuiSetStyle(DEFAULT, TEXT_SPACING, 1);
+    GuiSetStyle(DEFAULT, TEXT_SIZE, 16); // Köşeli fontlar 16 gibi çift sayılarda jilet gibi durur
+    GuiSetStyle(DEFAULT, TEXT_SPACING, 1); 
+    
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, 0x1E2126FF);
     GuiSetStyle(DEFAULT, BASE_COLOR_NORMAL, 0x2A2E35FF);
     GuiSetStyle(DEFAULT, BASE_COLOR_FOCUSED, 0x444B57FF);
@@ -72,7 +74,8 @@ void init_graphics_window(void) {
 }
 
 void close_graphics_window(void) {
-    UnloadFont(guiFont);
+    // ÖNEMLİ: Raylib'in varsayılan fontu bellekten silinemez.
+    // Bu yüzden buradaki UnloadFont(guiFont); kodunu siliyoruz ki program çökmesin.
     CloseWindow();
 }
 
@@ -188,14 +191,42 @@ void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node,
         bool is_node_sel = n->is_selected || (*selected_node != NULL && (*selected_node)->id == n->id);
         float size = is_node_sel ? 22.0f : 14.0f;
         Color fill = node_color_for_type(n->type);
-        Color border = is_node_sel ? (Color){ 255, 235, 59, 255 } : (Color){ 20, 24, 30, 255 };
+        Color border = is_node_sel ? (Color){ 255, 235, 59, 255 } : (Color){ 20, 24, 30, 255 }; // Koyu Antrasit veya Sarı Çerçeve
         
-        if (n->type == PHOTO) DrawRectangleRec((Rectangle){n->x-size, n->y-size, size*2, size*2}, fill);
-        else if (n->type == EVENT) DrawPoly((Vector2){n->x, n->y}, 3, size, 0, fill);
-        else DrawCircleV((Vector2){n->x, n->y}, size, fill);
+        // Mouse bu düğmenin üzerinde mi?
+        bool is_hovered = CheckCollisionPointCircle(mouse_world, (Vector2){n->x, n->y}, size);
+
+        // --- 1. HARİKA DOKUNUŞ: NEON PARLAMA (GLOW) EFEKTİ ---
+        if (is_node_sel || is_hovered) {
+            float glow_size = size * 1.8f; // Parlama boyutu
+            Color glow_color = Fade(fill, 0.4f); // Rengin saydam (hafif) hali
+            
+            if (n->type == PHOTO) DrawRectangleRec((Rectangle){n->x-glow_size, n->y-glow_size, glow_size*2, glow_size*2}, glow_color);
+            else if (n->type == EVENT) DrawPoly((Vector2){n->x, n->y}, 3, glow_size, 0, glow_color);
+            else DrawCircleV((Vector2){n->x, n->y}, glow_size, glow_color);
+        }
+
+        // --- 2. HARİKA DOKUNUŞ: DERİNLİK VE DIŞ ÇERÇEVE (OUTLINE) ---
+        float border_thick = 3.0f; // Çerçevenin kalınlığını buradan ayarlayabilirsin
+
+        if (n->type == PHOTO) { // Kare
+            // Önce biraz daha büyük koyu çerçeveyi çiz
+            DrawRectangleRec((Rectangle){n->x-size-border_thick, n->y-size-border_thick, (size+border_thick)*2, (size+border_thick)*2}, border);
+            // Sonra renkli dolguyu çiz
+            DrawRectangleRec((Rectangle){n->x-size, n->y-size, size*2, size*2}, fill);
+        }
+        else if (n->type == EVENT) { // Üçgen
+            DrawPoly((Vector2){n->x, n->y}, 3, size + border_thick, 0, border);
+            DrawPoly((Vector2){n->x, n->y}, 3, size, 0, fill);
+        }
+        else { // Yuvarlak (USER)
+            DrawCircleV((Vector2){n->x, n->y}, size + border_thick, border);
+            DrawCircleV((Vector2){n->x, n->y}, size, fill);
+        }
         
-        // --- YAZILAR (Cool Kapsül Efekti Geri Döndü) ---
-        if (camera.zoom > 0.6f) {
+        // --- 3. HARİKA DOKUNUŞ: AKILLI ETİKET (CLEAN UI) ---
+        // Sadece çok yakınlaşıldığında VEYA düğüm seçiliyse VEYA fare üzerindeyse yazıyı göster
+        if (camera.zoom > 1.2f || is_node_sel || is_hovered) {
             char label[64]; 
             node_get_display_label(n, label, sizeof(label));
             
@@ -203,13 +234,16 @@ void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node,
             Vector2 sz = MeasureTextEx(guiFont, label, 14, 1);
             
             float text_x = n->x - (sz.x / 2.0f);
-            float text_y = n->y + size + 8.0f;
+            float text_y = n->y + size + border_thick + 8.0f; // Yazıyı çerçevenin biraz daha altına ittik
 
             // Yazıların arkasına yarı saydam siyah kapsül eklendi
-            DrawRectangle((int)text_x - 4, (int)text_y - 2, (int)sz.x + 8, (int)sz.y + 4, Fade(BLACK, 0.7f));
+            DrawRectangle((int)text_x - 4, (int)text_y - 2, (int)sz.x + 8, (int)sz.y + 4, Fade(BLACK, 0.8f));
+            
+            // Eğer fare üzerindeyse veya seçiliyse yazıyı daha parlak yap
+            Color text_color = (is_hovered || is_node_sel) ? (Color){ 64, 196, 255, 255 } : RAYWHITE;
             
             // Yazıyı yüksek çözünürlüklü çizdir
-            DrawTextEx(guiFont, label, (Vector2){text_x, text_y}, 14, 1, RAYWHITE);
+            DrawTextEx(guiFont, label, (Vector2){text_x, text_y}, 14, 1, text_color);
         }
     }
 
@@ -225,8 +259,6 @@ void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node,
     
     // Sağ Paneli Çiz
     Boran_draw_ui_panel(graph, *selected_node, search_text_buffer, sw, GetScreenHeight());
-
-    
 
     // --- YENİ: Sol Üst Bilgi Kutusu ve FPS Sayacı ---
     int box_y = 35; // Kutuyu pencerenin üstünden biraz daha uzaklaştırdık
