@@ -79,6 +79,8 @@ Projede uygulanan algoritmalar (`algorithms.c` ve `queries.c`):
 ---
 
 Detaylı proje rapor pdfsi: [VERİ YAPILARI PROJE RAPORU.pdf](https://github.com/user-attachments/files/28591954/VERI.YAPILARI.PROJE.RAPORU.pdf)
+Video drive linki: https://drive.google.com/file/d/1E7qHfPMbAEOgkUJrCXo7msvQ8cNGJBCw/view?usp=sharing
+
 
 
 ## 📂 Dizin Yapısı ve Dosyaların Görevleri
