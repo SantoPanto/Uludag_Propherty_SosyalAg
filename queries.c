@@ -4,6 +4,8 @@
 #include "graph_models.h"
 #include "graph_adj.h"
 
+//EMÝNE TABAN
+
 static void print_node_label(Graph* graph, int node_id) {
     int idx = find_node_index(graph, node_id);
     if (idx == -1) {

@@ -4,6 +4,8 @@
 #include "graph_models.h" // 1. kişinin Node yapısını kullanmak için
 #include <stdbool.h>
 
+//EMİNE TABAN
+
 // Kuyruk elemanı: Graf düğümünün adresini ve bir sonraki kuyruk elemanını tutar
 typedef struct QueueNode {
     Node* data;
