@@ -50,13 +50,15 @@ void init_graphics_window(void) {
     InitWindow(1280, 720, "Property Graph - Sosyal Ag");
     SetTargetFPS(60);
 
-    // Font Yükleme
-    guiFont = LoadFontEx("Roboto-Regular.ttf", 18, 0, 250);
+    // --- YENİ FONT AYARI ---
+    // Roboto dosyasını sildik, Raylib'in kendi köşeli/dijital fontunu çekiyoruz
+    guiFont = GetFontDefault();
     GuiSetFont(guiFont);
 
     // Dark Mode Stilleri
-    GuiSetStyle(DEFAULT, TEXT_SIZE, 18);
-    GuiSetStyle(DEFAULT, TEXT_SPACING, 1);
+    GuiSetStyle(DEFAULT, TEXT_SIZE, 16); // Köşeli fontlar 16 gibi çift sayılarda jilet gibi durur
+    GuiSetStyle(DEFAULT, TEXT_SPACING, 1); 
+    
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, 0x1E2126FF);
     GuiSetStyle(DEFAULT, BASE_COLOR_NORMAL, 0x2A2E35FF);
     GuiSetStyle(DEFAULT, BASE_COLOR_FOCUSED, 0x444B57FF);
@@ -72,7 +74,8 @@ void init_graphics_window(void) {
 }
 
 void close_graphics_window(void) {
-    UnloadFont(guiFont);
+    // ÖNEMLİ: Raylib'in varsayılan fontu bellekten silinemez.
+    // Bu yüzden buradaki UnloadFont(guiFont); kodunu siliyoruz ki program çökmesin.
     CloseWindow();
 }
 
