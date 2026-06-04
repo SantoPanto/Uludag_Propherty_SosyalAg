@@ -18,12 +18,12 @@ static bool is_selecting = false;
 static Vector2 selection_start = { 0 };
 static Vector2 selection_end = { 0 };
 
-// --- Yardımcı Renk Fonksiyonları ---
+// --- Yardımcı Renk Fonksiyonları (Karanlık Tema) ---
 static Color node_color_for_type(NodeType type) {
     switch (type) {
-        case USER: return (Color){ 64, 196, 255, 255 };
-        case PHOTO: return (Color){ 105, 240, 174, 255 };
-        case EVENT: return (Color){ 178, 113, 255, 255 };
+        case USER: return (Color){ 64, 196, 255, 255 };   // Canlı Mavi
+        case PHOTO: return (Color){ 105, 240, 174, 255 }; // Neon Yeşil
+        case EVENT: return (Color){ 178, 113, 255, 255 }; // Parlak Mor
         default: return LIGHTGRAY;
     }
 }
@@ -99,7 +99,7 @@ void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node,
     int sw = GetScreenWidth();
     bool is_mouse_on_ui = (GetMouseX() > sw - 360);
 
-    // Mouse Etkileşimleri
+    // Mouse Etkileşimleri (Yeni Seçim Mantığı Korundu)
     if (!is_mouse_on_ui) {
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             bool hit = false;
@@ -148,7 +148,7 @@ void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node,
                     Node* n = graph->nodes[i];
                     if (CheckCollisionPointRec((Vector2){n->x, n->y}, sel_rect)) {
                         n->is_selected = 1;
-                        *selected_node = n;
+                        *selected_node = n; // Son seçileni aktif node yap
                     }
                 }
                 is_selecting = false;
@@ -158,7 +158,7 @@ void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node,
     }
 
     BeginDrawing();
-    ClearBackground((Color){ 34, 39, 46, 255 });
+    ClearBackground((Color){ 34, 39, 46, 255 }); // Koyu Antrasit Arka Plan
     BeginMode2D(camera);
 
     // Kenarları Çiz
@@ -174,7 +174,7 @@ void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node,
                 
                 float thick = (is_src_sel || is_target_sel) && !is_selecting ? 4.0f : 1.0f;
                 Color col = edge_color_for_type(adj->edge->type);
-                if (thick == 1.0f && (*selected_node != NULL || is_selecting)) col.a = 40;
+                if (thick == 1.0f && (*selected_node != NULL || is_selecting)) col.a = 40; // Ghosting efekti
                 
                 DrawLineEx((Vector2){src->x, src->y}, (Vector2){target->x, target->y}, thick, col);
             }
@@ -194,13 +194,26 @@ void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node,
         else if (n->type == EVENT) DrawPoly((Vector2){n->x, n->y}, 3, size, 0, fill);
         else DrawCircleV((Vector2){n->x, n->y}, size, fill);
         
+        // --- YAZILAR (Cool Kapsül Efekti Geri Döndü) ---
         if (camera.zoom > 0.6f) {
-            char label[64]; node_get_display_label(n, label, sizeof(label));
+            char label[64]; 
+            node_get_display_label(n, label, sizeof(label));
+            
+            // Yeni font sistemine göre yazının piksel genişliğini ölçüyoruz
             Vector2 sz = MeasureTextEx(guiFont, label, 14, 1);
-            DrawTextEx(guiFont, label, (Vector2){n->x - sz.x/2, n->y + size + 8}, 14, 1, RAYWHITE);
+            
+            float text_x = n->x - (sz.x / 2.0f);
+            float text_y = n->y + size + 8.0f;
+
+            // Yazıların arkasına yarı saydam siyah kapsül eklendi
+            DrawRectangle((int)text_x - 4, (int)text_y - 2, (int)sz.x + 8, (int)sz.y + 4, Fade(BLACK, 0.7f));
+            
+            // Yazıyı yüksek çözünürlüklü çizdir
+            DrawTextEx(guiFont, label, (Vector2){text_x, text_y}, 14, 1, RAYWHITE);
         }
     }
 
+    // Seçim Kutusu (Marquee) Çizimi
     if (is_selecting) {
         Rectangle sel_rect = { fminf(selection_start.x, selection_end.x), fminf(selection_start.y, selection_end.y), 
                                fabsf(selection_end.x - selection_start.x), fabsf(selection_end.y - selection_start.y) };
@@ -209,7 +222,25 @@ void draw_graph_network(Graph* graph, TrieNode* trie_root, Node** selected_node,
     }
 
     EndMode2D();
+    
+    // Sağ Paneli Çiz
     Boran_draw_ui_panel(graph, *selected_node, search_text_buffer, sw, GetScreenHeight());
+
+    
+
+    // --- YENİ: Sol Üst Bilgi Kutusu ve FPS Sayacı ---
+    int box_y = 35; // Kutuyu pencerenin üstünden biraz daha uzaklaştırdık
+    
+    // Kutunun yüksekliğini 56'dan 64'e çıkardık ki yazılar rahat nefes alsın
+    DrawRectangle(8, box_y, 200, 64, (Color){ 25, 29, 36, 220 }); 
+    DrawRectangleLines(8, box_y, 200, 64, (Color){ 74, 83, 101, 255 }); 
+
+    int current_fps = GetFPS();
+    Color fps_color = (current_fps >= 45) ? (Color){ 105, 240, 174, 255 } : (Color){ 255, 171, 64, 255 }; 
+    
+    // Yazıları kutunun üst çizgisinden biraz daha aşağı kaydırdık (+12 ve +36)
+    DrawText(TextFormat("%d FPS", current_fps), 16, box_y + 12, 16, fps_color);
+    DrawText(TextFormat("Toplam Dugum: %d", graph->node_count), 16, box_y + 36, 14, RAYWHITE);
 
     // Arama
     if (IsKeyPressed(KEY_ENTER) && search_text_buffer != NULL && strlen(search_text_buffer) > 0) {
