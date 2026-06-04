@@ -9,6 +9,7 @@
 #include "graph_models.h"
 #include "hash_table.h"
 #include "trie.h"
+#include "queries.h" // YENI EKLENDI: Faz 3 analizleri icin
 
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
@@ -86,7 +87,7 @@ void Boran_format_side_panel_text(Graph* graph, Node* node, char* buffer, int ma
 
     char label[128];
     node_get_display_label(node, label, sizeof(label));
-    
+
     int offset = snprintf(buffer, (size_t)max_len,
                           "=== %s ===\nID: %d | Tur: %s\n\n--- OZELLIKLER ---\n",
                           label, node->id, node_type_to_string(node->type));
@@ -273,12 +274,14 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
 
                 if (mode == 2) {
                     new_node = create_node(dynamic_id_counter++, USER);
-                    // YENİ: Alan 800x800'den 3000x3000'e çıkarıldı
                     new_node->x = (float)(rand() % 3000) - 1500.0f;
                     new_node->y = (float)(rand() % 3000) - 1500.0f;
                     int age = 18 + rand() % 40;
                     add_property_to_node(new_node, "Name", TYPE_STRING, strdup(safe_str));
                     add_property_to_node(new_node, "Age", TYPE_INTEGER, &age);
+
+                    // YENI EKLENEN: Terminal ciktisi
+                    printf("[FAZ 2] AI ile Kullanici olusturuldu: %s (ID: %d, Yas: %d)\n", safe_str, new_node->id, age);
 
                     add_node_to_graph(my_graph, new_node);
                     if (g_ht != NULL) insert_to_hash(g_ht, new_node);
@@ -297,7 +300,6 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
                 }
                 else if (mode == 3) {
                     new_node = create_node(dynamic_id_counter++, PHOTO);
-                    // YENİ: Alan 3000x3000'e çıkarıldı
                     new_node->x = (float)(rand() % 3000) - 1500.0f;
                     new_node->y = (float)(rand() % 3000) - 1500.0f;
                     int size_mb = 2 + rand() % 10;
@@ -306,6 +308,9 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
                     add_property_to_node(new_node, "Description", TYPE_STRING, safe_str);
                     add_property_to_node(new_node, "Resolution", TYPE_STRING, "1920x1080");
                     add_property_to_node(new_node, "Size(MB)", TYPE_INTEGER, &size_mb);
+
+                    // YENI EKLENEN: Terminal ciktisi
+                    printf("[FAZ 2] AI ile Fotograf eklendi: %s (ID: %d, Boyut: %dMB)\n", safe_str, new_node->id, size_mb);
 
                     add_node_to_graph(my_graph, new_node);
                     if (g_ht != NULL) insert_to_hash(g_ht, new_node);
@@ -324,12 +329,14 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
                 }
                 else if (mode == 4) {
                     new_node = create_node(dynamic_id_counter++, EVENT);
-                    // YENİ: Alan 3000x3000'e çıkarıldı
                     new_node->x = (float)(rand() % 3000) - 1500.0f;
                     new_node->y = (float)(rand() % 3000) - 1500.0f;
                     int capacity = 50 + rand() % 500;
                     add_property_to_node(new_node, "Title", TYPE_STRING, strdup(safe_str));
                     add_property_to_node(new_node, "Capacity", TYPE_INTEGER, &capacity);
+
+                    // YENI EKLENEN: Terminal ciktisi
+                    printf("[FAZ 2] AI ile Etkinlik olusturuldu: %s (ID: %d, Kapasite: %d)\n", safe_str, new_node->id, capacity);
 
                     add_node_to_graph(my_graph, new_node);
                     if (g_ht != NULL) insert_to_hash(g_ht, new_node);
@@ -350,6 +357,11 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
                 }
                 token = strtok(NULL, "|");
             }
+
+            // YENI EKLENEN: Toplu islem sonrasi Faz 3 Analizi
+            printf("\n--- [FAZ 3] AGI YENIDEN ANALIZ EDILIYOR ---\n");
+            find_most_active_node(my_graph);
+            printf("----------------------------------------------\n\n");
         }
     }
 #endif
@@ -368,18 +380,18 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
             i++;
         }
         line_buf[i] = '\0';
-        
+
         Color text_color = RAYWHITE;
 
         if (strstr(line_buf, "===") != NULL || strstr(line_buf, "---") != NULL) {
-            text_color = (Color){ 64, 196, 255, 255 }; 
-        } 
+            text_color = (Color){ 64, 196, 255, 255 };
+        }
         else if (strstr(line_buf, "->") != NULL || strstr(line_buf, "<-") != NULL) {
-            text_color = (Color){ 180, 200, 220, 255 }; 
+            text_color = (Color){ 180, 200, 220, 255 };
         }
 
         DrawText(line_buf, panel_x + 16, y, 14, text_color);
-        y += 18; 
+        y += 18;
 
         line += i;
         if (*line == '\n') line++;
@@ -387,7 +399,7 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
 
     if (dropdown_active) {
         DrawRectangleRec(drop_rect, (Color){ 30, 34, 40, 255 });
-        DrawRectangleLinesEx(drop_rect, 1, (Color){ 74, 83, 101, 255 }); 
+        DrawRectangleLinesEx(drop_rect, 1, (Color){ 74, 83, 101, 255 });
 
         for (int i = 0; i < suggestion_count; i++) {
             Rectangle item_rect = { drop_rect.x, drop_rect.y + (i * 25), drop_rect.width, 25 };
@@ -399,7 +411,7 @@ void Boran_draw_ui_panel(Graph* graph, Node* selected_node, char* search_text_bu
 
             char label[128] = {0};
             node_get_display_label(suggestions[i], label, sizeof(label));
-            
+
             DrawText(label, item_rect.x + 8, item_rect.y + 6, 14, isHovering ? (Color){ 64, 196, 255, 255 } : RAYWHITE);
 
             if (isHovering && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
