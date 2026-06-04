@@ -72,7 +72,6 @@ Projede uygulanan algoritmalar (`algorithms.c` ve `queries.c`):
 * **`bfs_and_find_degrees` (BFS):** Belirtilen bir başlangıç düğümünden dışa doğru katman katman arama yapar. Düğümler arası uzaklıkları (dereceleri) hesaplar.
 * **`dfs` ve `dfs_full_network` (DFS):** Ağdaki düğümlerin derinlemesine taranmasını sağlar. Ağda birbirinden kopuk gruplar (bağlantı bileşenleri) olup olmadığını tespit eder.
 * **`find_shortest_path`:** İki kullanıcı arasındaki en kısa yolu (ortak arkadaş zincirini) bulur. Ekmek kırıntısı (parent tracking) yöntemiyle yolu geriye doğru takip ederek terminale yazdırır (Örn: `Ahmet -> Mehmet -> Ayşe`).
-* **`recommend_friends`:** Ortak arkadaş sayısına dayalı (Mutual Friends) arkadaş öneri sistemidir. Hedef kullanıcının arkadaşlarının arkadaşlarını (ikinci derece bağlantılar) BFS mantığına benzer şekilde tarayıp skorlar oluşturur ve öneri sunar.
 * **`find_friends_events_photos`:** "Kullanıcının arkadaşlarının katıldığı etkinliklerde çekilmiş fotoğraflar" gibi çok katmanlı, zincirleme graf sorgularını gerçekleştirir.
 
 ---
