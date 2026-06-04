@@ -5,92 +5,77 @@ Bu proje, bir sosyal ağ ekosistemini (kullanıcılar, arkadaşlık ilişkileri,
 ---
 
 ## 📑 İçindekiler
-1. [Proje Hakkında](#proje-hakkında)
-2. [Sistem Mimarisi ve Yapılar](#sistem-mimarisi-ve-yapılar)
-3. [Kullanılan Veri Yapıları](#kullanılan-veri-yapıları)
-4. [Proje Raporu ve Analizler](#proje-raporu-ve-analizler)
-5. [Kurulum ve Çalıştırma (Nasıl Ayağa Kaldırılır?)](#kurulum-ve-çalıştırma)
-6. [Dizin Yapısı ve Dosyaların Görevleri](#dizin-yapısı)
-7. [Kullanım](#kullanım)
+1. [Proje Hakkında ve Temel İşleyiş](#proje-hakkında-ve-temel-işleyiş)
+2. [Sistem Mimarisi ve Kullanılan Veri Yapıları](#sistem-mimarisi-ve-kullanılan-veri-yapıları)
+3. [Arka Planda Neler Oluyor? (Etkileşim Senaryoları)](#arka-planda-neler-oluyor-etkileşim-senaryoları)
+4. [Algoritmalar ve Analizler (Fonksiyon Detayları)](#algoritmalar-ve-analizler)
+5. [Dizin Yapısı ve Dosyaların Görevleri](#dizin-yapısı-ve-dosyaların-görevleri)
+6. [Kurulum ve Çalıştırma](#kurulum-ve-çalıştırma)
 
 ---
 
-## 🚀 Proje Hakkında
-Proje, kurgusal veya gerçek verilerle beslenebilen bir sosyal ağ grafı oluşturur. Kullanıcılar arası en kısa yol (shortest path), etki alanı analizi, ortak arkadaş bulma gibi algoritmik problemleri çözer. Tüm bu süreç, Raylib motoru ile interaktif bir arayüzde (GUI) görselleştirilir. Ayrıca, karmaşık ağ sorgularını doğal dil ile çözümlemek için Python (Flask/FastAPI) ile yazılmış bir yapay zeka servisiyle (AI API) iletişim kurar.
+## 🚀 Proje Hakkında ve Temel İşleyiş
 
-## 🏗️ Sistem Mimarisi ve Yapılar
+Proje, kurgusal veya gerçek verilerle beslenebilen bir sosyal ağ grafı (Graph) oluşturur. Kullanıcılar (Mavi), Fotoğraflar (Yeşil) ve Etkinlikler (Mor) birer **Düğüm (Node)** olarak; arkadaşlıklar, beğeniler ve katılımlar ise birer **Kenar (Edge)** olarak modellenmiştir. `main.c` programın giriş noktasıdır; grafik motorunu başlatır, boş veri yapılarını bellekte tahsis eder ve görsel arayüz döngüsünü (Game Loop) çalıştırır.
 
-Proje mimarisi **3 ana bileşenden** oluşmaktadır:
-
-1. **Çekirdek Sistem (Core / Backend - C):**
-   - Tüm veri yönetimi, bellek işlemleri ve algoritmaların çalıştığı bölümdür. 
-   - Mock veri üretimi (`data_generator.c`) ve ağ üzerindeki sorgular (`queries.c`, `algorithms.c`) burada işlenir.
-2. **Görselleştirme ve Arayüz (Frontend - C & Raylib):**
-   - Kullanıcı etkileşimleri ve graf (düğüm/kenar) çizimleri Raylib ve Raygui kütüphaneleri kullanılarak yapılır. (`ui_render.c`, `ui_integration.c`)
-3. **AI Mikroservisi (Python):**
-   - `ai_service/app.py` içerisinde çalışan, C uygulamasından gelen verileri (`ai_client.c` üzerinden) alıp AI API'lerine (Örn: OpenAI/Gemini) göndererek anlamlı çıktılar üreten bağımsız servistir.
+Kullanıcılar arayüz üzerinden ağa yeni veriler ekleyebilir, düğümleri sürükleyip bırakabilir, en kısa yol (shortest path) veya ortak arkadaş gibi karmaşık graf algoritmalarını tetikleyebilir.
 
 ---
 
-## 🧮 Kullanılan Veri Yapıları
+## 🏗️ Sistem Mimarisi ve Kullanılan Veri Yapıları
 
-Uygulamanın performanslı çalışabilmesi için standart kütüphaneler yerine amaca özel veri yapıları inşa edilmiştir:
+Uygulamanın performanslı çalışabilmesi için standart C kütüphaneleri yerine bellek yönetimi optimize edilmiş özel veri yapıları inşa edilmiştir:
 
-* **Graf (Graph - Adjacency List):** Sosyal ağdaki kullanıcıları (düğümler) ve aralarındaki arkadaşlıkları (kenarlar) tutar. (`graph_adj.c`, `graph_models.c`)
-* **Hash Tablosu (Hash Table):** Kullanıcı ID'leri veya kullanıcı adları üzerinden `O(1)` karmaşıklığında ultra hızlı arama yapmak için kullanılır. (`hash_table.c`)
-* **Trie (Önek Ağacı):** Arama çubuğunda (Search Bar) kullanıcı adını yazarken otomatik tamamlama (auto-complete) ve hızlı prefix eşleştirmesi yapmak için kullanılır. `O(L)` (L: kelime uzunluğu) karmaşıklığında çalışır. (`trie.c`)
-* **Kuyruk (Queue):** Graf üzerindeki Breadth-First Search (BFS) algoritmaları ve "En Kısa Yol" (Shortest Path) hesaplamaları için kullanılır. (`queue.c`)
-
----
-
-## 📊 Proje Raporu ve Analizler
-
-> **Not:** Projenin UML diyagramlarını, veri yapılarının zaman karmaşıklığı (Big-O) analizlerini ve AI API'sine gönderilen prompt'ların dökümünü içeren kapsamlı rapor.
-
-*(Eğer bu detayları içeren ekstra bir PDF/Docx dosyanız varsa, buraya linkini veya dosya yolunu ekleyebilirsiniz. Örn: `[Kapsamlı Raporu Görüntüle](./Rapor.pdf)`)*
+* **Graf (Graph - Adjacency List) (`graph_adj.c`):**
+    Ağı bellekte tutan ana yapıdır. Düğümleri (Nodes) bir dizide tutarken, komşuluk ilişkilerini (Edges) her düğüme bağlı bir bağlı liste (Linked List) ile yönetir. Bu yapı bellek dostudur ve seyrek (sparse) graflar için idealdir. O(V+E) karmaşıklığı ile grafın taranmasını sağlar.
+* **Hash Tablosu (Hash Table) (`hash_table.c`):**
+    Düğüm ID'leri üzerinden `O(1)` karmaşıklığında ultra hızlı arama yapmak için kullanılır. Graf büyüdüğünde doğrusal arama (O(N)) yapmak yerine, kullanıcıya ID bazlı anında erişim sunar. Çakışmalar (collisions) bağlı liste (chaining) yöntemi ile çözülür.
+* **Trie (Önek Ağacı) (`trie.c`):**
+    Arama çubuğunda (Search Bar) kullanıcı adını yazarken otomatik tamamlama (auto-complete) için tasarlanmıştır. Veriler (isimler) harf harf ağaca dizilir. Arama işlemi ismin uzunluğu kadar, yani `O(L)` (L: kelime uzunluğu) sürer. Ekranda yazarken anında öneri çıkmasını sağlar.
+* **Kuyruk (Queue) (`queue.c`):**
+    Graf üzerindeki Genişlik Öncelikli Arama (BFS) ve "En Kısa Yol" (Shortest Path) hesaplamaları için First-In-First-Out (FIFO) prensibiyle çalışan yapıdır.
 
 ---
 
-## 🛠️ Kurulum ve Çalıştırma
+## ⚙️ Arka Planda Neler Oluyor? (Etkileşim Senaryoları)
 
-Projeyi ayağa kaldırmanın **iki farklı yolu** bulunmaktadır. 
+Kullanıcı arayüzdeki butonlara bastığında veya etkileşime girdiğinde kod mimarisi şu şekilde çalışır:
 
-### Yöntem 1: Docker Compose ile Çalıştırma (Önerilen)
-Sisteminizde `Docker` ve `Docker Compose` kuruluysa, tüm projeyi (C Frontend UI ve Python AI Servisi) tek komutla izole bir şekilde ayağa kaldırabilirsiniz.
+### Senaryo 1: "Yapay Zeka: Kullanıcı/Fotoğraf/Etkinlik Ekle" Butonuna Basıldığında
+1.  **UI Tetiklemesi:** Kullanıcı yan panelden (örneğin "Yapay Zeka: Kullanıcı Ekle") butonuna basar (`ui_integration.c` içerisindeki `GuiButton` tetiklenir).
+2.  **Multithreading (Arka Plan İşlemi):** Arayüzün (UI) donmaması için bir iş parçacığı (thread) oluşturulur (`pthread_create(&t, NULL, fetch_ai_user_thread, NULL)`). Arayüz o sırada "Yapay Zeka Üretiyor..." şeklinde güncellenir.
+3.  **Ağ İsteği (AI Client):** `ai_client.c` dosyası, libcurl kütüphanesini kullanarak arka plandaki Python (Flask/FastAPI) AI mikroservisine bir HTTP GET isteği gönderir (Örn: `http://ai_backend:5000/generate_users_bulk/5`).
+4.  **Yanıtın Alınması:** Python AI, uydurma veya akıllı veriler oluşturup "|" karakteriyle ayırarak geri döner (Örn: "Ahmet|Mehmet|Ayşe"). C istemcisi bu yanıtı `ai_result_buffer` içine kopyalar ve `ai_new_data_ready` bayrağını (flag) kaldırır.
+5.  **Verinin Sisteme İşlenmesi:** Ana C döngüsü (UI Thread) yeni verinin geldiğini fark eder. Gelen metni `strtok` fonksiyonu ile parçalar.
+6.  **Graf Güncellemesi:** Her yeni veri için `create_node` çağrılır. Düğüm rastgele x,y koordinatlarına yerleştirilir. Yeni düğüm; Grafa (`graph_adj.c`), Hash Tablosuna (`hash_table.c`) ve Trie Ağacına (`trie.c`) senkron bir şekilde kaydedilir.
+7.  **Bağlantıların Kurulması:** Yeni düğüm ile eski düğümler arasında rastgele (fakat düğüm tipine uygun) kenarlar oluşturulur. Örneğin bir kullanıcı eklendiğinde `FRIEND` kenarı, fotoğraf eklendiğinde `LIKES` kenarı kurulur.
+8.  **Son Analiz (Faz 3):** Ekleme işlemi bittikten sonra `queries.c` içindeki `find_most_active_node(my_graph)` otomatik çalıştırılır ve ağın o anki en popüler düğümü terminale basılır.
 
-1. Proje dizinine gidin.
-2. Terminalde aşağıdaki komutu çalıştırın:
-   ```bash
-   docker-compose up --build
-3. Bu komut;
-   - `ai_service/Dockerfile` dosyasını okuyarak Python AI API'sini başlatır.
-   - `Dockerfile.frontend` dosyasını okuyarak C uygulamasını derler ve çalıştırır. *(Not: GUI barındıran Docker container'larının ekranda görüntülenebilmesi için X11 Server ayarlarının yapılmış olması gerekebilir).*
+### Senaryo 2: Arama Çubuğuna Bir İsim Yazıldığında
+1.  Arama çubuğuna harfler girildikçe (`search_text_buffer`), kelime Trie ağacına gönderilir (`trie.c`).
+2.  Ağaçta girilen harfler kadar derinliğe inilir. Eşleşen kelimeler anında alt alta bir "Dropdown" (açılır liste) olarak çizilir (`ui_integration.c`).
+3.  Kullanıcı listeden bir isim seçtiğinde veya Enter'a bastığında, Trie doğrudan eşleşen düğümün (Node) bellek adresini (`Node*`) döndürür.
+4.  Kamera seçilen düğüme odaklanır (`Boran_focus_on_node` - `ui_render.c`) ve düğümün çevresinde neon bir parlama efekti başlatılır. Seçilen düğümün tüm detayları, giriş ve çıkış bağlantıları yan panele yazdırılır (`Boran_format_side_panel_text`).
 
-### Yöntem 2: Manuel Derleme (Makefile ile Local Kurulum)
-Eğer uygulamayı direkt kendi işletim sisteminizde çalıştırmak istiyorsanız:
+### Senaryo 3: Ekranda Görselleştirme (Rendering) ve Sürükleme
+Ağda binlerce düğüm olduğunda uygulamanın kasmasını önlemek için `ui_render.c` içinde **Culling (Görüş Alanı Kontrolü)** uygulanır.
+1.  Kamera koordinatları ve ekran sınırları (top_left, bottom_right) hesaplanır.
+2.  Çizim döngüsü her düğümün koordinatını kontrol eder. Sınırların dışında kalan düğümler ve kenarlar hiç çizilmez, ağır matematiksel işlemler (okların açısını `atan2f` ile hesaplama) atlanır. Bu sayede 60 FPS garantilenir.
+3.  Fare ile bir düğüme tıklandığında `CheckCollisionPointCircle` ile temas kontrolü yapılır. Basılı tutulduğunda fare deltası (konum değişimi) kadar düğümün X ve Y koordinatları güncellenir.
 
-**Gereksinimler:**
-* `gcc` derleyicisi
-* `make` aracı
-* `raylib` kütüphanesi (Sisteminizde yüklü olmalıdır)
-* `python3` ve `pip` (AI servisi için)
+---
 
-**Adımlar:**
+## 🧮 Algoritmalar ve Analizler (Fonksiyon Detayları)
 
-1. **AI Servisini Başlatın:**
-   ```bash
-   cd ai_service
-   pip install -r requirements.txt
-   python app.py
+Projede uygulanan algoritmalar (`algorithms.c` ve `queries.c`):
 
-2. **C Uygulamasını Derleyin ve Çalıştırın:**
-   Yeni bir terminal sekmesi açıp ana dizine dönün:
-   ```bash
-   make clean
-   make
-   ./program_adi
+* **`bfs_and_find_degrees` (BFS):** Belirtilen bir başlangıç düğümünden dışa doğru katman katman arama yapar. Düğümler arası uzaklıkları (dereceleri) hesaplar.
+* **`dfs` ve `dfs_full_network` (DFS):** Ağdaki düğümlerin derinlemesine taranmasını sağlar. Ağda birbirinden kopuk gruplar (bağlantı bileşenleri) olup olmadığını tespit eder.
+* **`find_shortest_path`:** İki kullanıcı arasındaki en kısa yolu (ortak arkadaş zincirini) bulur. Ekmek kırıntısı (parent tracking) yöntemiyle yolu geriye doğru takip ederek terminale yazdırır (Örn: `Ahmet -> Mehmet -> Ayşe`).
+* **`recommend_friends`:** Ortak arkadaş sayısına dayalı (Mutual Friends) arkadaş öneri sistemidir. Hedef kullanıcının arkadaşlarının arkadaşlarını (ikinci derece bağlantılar) BFS mantığına benzer şekilde tarayıp skorlar oluşturur ve öneri sunar.
+* **`find_friends_events_photos`:** "Kullanıcının arkadaşlarının katıldığı etkinliklerde çekilmiş fotoğraflar" gibi çok katmanlı, zincirleme graf sorgularını gerçekleştirir.
 
-   (Alternatif olarak Code::Blocks kullanıyorsanız SosyalAg.cbp proje dosyasını açıp derleyebilirsiniz).
+---
 
 ## 📂 Dizin Yapısı ve Dosyaların Görevleri
 
@@ -99,7 +84,6 @@ Eğer uygulamayı direkt kendi işletim sisteminizde çalıştırmak istiyorsan�
 ├── Makefile                 # C projesinin derleme yönergeleri
 ├── docker-compose.yml       # Frontend ve AI servisini aynı anda ayağa kaldıran yapılandırma
 ├── Dockerfile.frontend      # C uygulamasının Docker imaj dosyası
-├── program_adi              # Derlenmiş çalıştırılabilir C dosyası
 ├── Roboto-Regular.ttf       # Arayüz (UI) için kullanılan yazı tipi
 │
 ├── ai_service/              # Yapay Zeka Mikroservis Klasörü
@@ -107,30 +91,48 @@ Eğer uygulamayı direkt kendi işletim sisteminizde çalıştırmak istiyorsan�
 │   ├── requirements.txt     # Python bağımlılıkları
 │   └── Dockerfile           # Python servisinin Docker imajı
 │
-├── SosyalAg/                # IDE (Code::Blocks) Proje Dosyaları
-│   ├── SosyalAg.cbp
-│   └── SosyalAg.depend
-│
 └── [C Kaynak Kodları]       # Çekirdek Sistem Dosyaları
-    ├── main.c               # Programın ana giriş noktası (Entry point)
-    ├── data_generator.h/.c  # Test amaçlı rastgele sosyal ağ verisi üreten sistem
-    ├── graph_models.h/.c    # Graf üzerindeki Düğüm (Node) ve Kenar (Edge) modelleri
-    ├── graph_adj.h/.c       # Adjacency List (Komşuluk Listesi) implementasyonu
-    ├── hash_table.h/.c      # Hash Tablosu veri yapısı ve arama işlemleri
-    ├── hash_table_benchmark.c # Hash Tablosu performans testleri
-    ├── trie.h/.c            # Trie (Önek Ağacı) veri yapısı
-    ├── queue.h/.c           # Kuyruk (Queue) veri yapısı
-    ├── algorithms.h/.c      # BFS, DFS vb. graf algoritmaları
-    ├── queries.h/.c         # Ortak arkadaş, bağlantı vb. sosyal ağ sorguları
-    ├── ai_client.c          # C'den Python AI servisine HTTP istekleri atan istemci
-    ├── ui_integration.h/.c  # UI ile C mantıksal arka planını bağlayan entegrasyon
-    ├── ui_render.h/.c       # Raylib ile ekrana çizim işlemlerini yapan motor
+    ├── main.c               # Programın başlatıcısı, bellek ayırmaları ve ana grafik döngüsü.
+    ├── graph_adj.h/.c       # Adjacency List veri yapısı, node ve kenar ekleme mantıkları.
+    ├── hash_table.h/.c      # Hash tablosu algoritmaları (ID bazlı O(1) erişim).
+    ├── trie.h/.c            # Trie (Önek Ağacı) arama ve otomatik tamamlama algoritmaları.
+    ├── queue.h/.c           # BFS ve En Kısa Yol için Queue (Kuyruk) implementasyonu.
+    ├── algorithms.h/.c      # BFS, DFS, Arkadaş Önerisi ve En Kısa Yol hesaplamaları.
+    ├── queries.h/.c         # Kompleks ağ sorguları ve Merkezilik (en aktif düğüm) analizleri.
+    ├── ai_client.c          # C'den Python AI servisine Curl ile asenkron HTTP istekleri atan modül.
+    ├── ui_integration.h/.c  # UI butonları, arayüz panelleri ve AI entegrasyon bağlayıcıları.
+    ├── ui_render.h/.c       # Raylib ile ekrana çizim (culling, neon, oklar) ve kamera kontrolleri.
     └── raylib.h, raygui.h, raymath.h # Raylib harici UI kütüphaneleri
 
+🛠️ Kurulum ve Çalıştırma
+Projeyi ayağa kaldırmanın iki farklı yolu bulunmaktadır.
 
-## 🎮 Kullanım
+Yöntem 1: Docker Compose ile Çalıştırma (Önerilen)
+Sisteminizde Docker ve Docker Compose kuruluysa:
 
-Uygulama başarıyla başlatıldığında karşınıza Raylib ile oluşturulmuş görsel bir ekran gelecektir.
+Bash
 
-* Ekranda sosyal ağdaki kişileri temsil eden düğümler (nodlar) ve aralarındaki arkadaşlık bağlarını görebilirsiniz.
-* Sol/Sağ panellerdeki arayüz butonlarını (raygui) kullanarak kullanıcı arayabilir, ortak arkadaşları filtreleyebilir veya AI analiz butonlarına tıklayarak seçili graf verisi hakkında yapay zekadan yorum alabilirsiniz.
+
+docker-compose up --build
+Bu komut hem Python AI servisini hem de C tabanlı Frontend'i izole ortamda ayağa kaldırır.
+
+Yöntem 2: Manuel Derleme (Makefile ile Local Kurulum)
+Sisteminizde gcc, make, raylib ve python3 yüklü olmalıdır.
+
+AI Servisini Başlatın:
+
+Bash
+
+
+cd ai_service
+pip install -r requirements.txt
+python app.py
+C Uygulamasını Derleyin ve Çalıştırın:
+Yeni bir terminal açıp ana dizinde:
+
+Bash
+
+
+make clean
+make
+./program_adi
