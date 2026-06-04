@@ -1,6 +1,5 @@
-[VERİ YAPILARI PROJE RAPORU.pdf](https://github.com/user-attachments/files/28591954/VERI.YAPILARI.PROJE.RAPORU.pdf)
-[VERİ YAPILARI PROJE RAPORU.pdf](https://github.com/user-attachments/files/28591931/VERI.YAPILARI.PROJE.RAPORU.pdf)
-[VERİ YAPILARI PROJE RAPORU.pdf](https://github.com/user-attachments/files/28591928/VERI.YAPILARI.PROJE.RAPORU.pdf)
+
+
 # Uludağ Propherty - Sosyal Ağ Analiz ve Görselleştirme Projesi
 
 Bu proje, bir sosyal ağ ekosistemini (kullanıcılar, arkadaşlık ilişkileri, etkileşimler) modellemek, analiz etmek ve Raylib kullanarak görselleştirmek amacıyla **C programlama dili** ile geliştirilmiş kapsamlı bir uygulamadır. Proje aynı zamanda ağ analizi ve öngörüler sunmak için **Python tabanlı bir Yapay Zeka (AI) Mikroservisi** ile entegre çalışmaktadır.
@@ -78,6 +77,9 @@ Projede uygulanan algoritmalar (`algorithms.c` ve `queries.c`):
 * **`find_friends_events_photos`:** "Kullanıcının arkadaşlarının katıldığı etkinliklerde çekilmiş fotoğraflar" gibi çok katmanlı, zincirleme graf sorgularını gerçekleştirir.
 
 ---
+
+Detaylı proje rapor pdfsi: [VERİ YAPILARI PROJE RAPORU.pdf](https://github.com/user-attachments/files/28591954/VERI.YAPILARI.PROJE.RAPORU.pdf)
+
 
 ## 📂 Dizin Yapısı ve Dosyaların Görevleri
 
